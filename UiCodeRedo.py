@@ -34,7 +34,7 @@ class Ui:
     def kill(self):
         self._run = False
     
-    def rotateSurf(surf: pygame.surface, orientation: tuple(int,int)):
+    def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int]):
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0])))
     
     def gen_MapSurface(self, visMap):
@@ -124,13 +124,13 @@ class Ui:
 async def TestMain():
     print("Start")
     auto1 = await control.connectOne()
-    auto2 = await control.connectOne()
+    #auto2 = await control.connectOne()
     await control.scan()
-    Uiob = Ui([auto1,auto2],control.map)
+    Uiob = Ui([auto1],control.map)
     iteration = 0
     print("Constructor finished")
     await auto1.setSpeed(200)
-    await auto2.setSpeed(300)
+    #await auto2.setSpeed(300)
     try:
         while True:
             await asyncio.sleep(10)
