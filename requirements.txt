@@ -1,0 +1,2 @@
+py-drivesdk
+pygame>=2.0.0
