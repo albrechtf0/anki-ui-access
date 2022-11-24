@@ -117,3 +117,18 @@ def generate(
 
     return vismap, position_tracker
     pass
+
+def flip_h(
+    vismap: Vismap, 
+    position_map: list[tuple[int,int,int]]
+) -> tuple[Vismap,PositionTracker]:
+    flipped_vismap = [list(reversed(column)) for column in vismap]
+    
+    column_count = len(vismap)
+    flipped_positions = [
+        (column_count-1-x,y,z) 
+        for x,y,z in position_map
+    ]
+    
+    return flipped_vismap, flipped_positions
+    pass
