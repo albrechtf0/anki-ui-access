@@ -1,31 +1,38 @@
 from anki import TrackPiece, TrackPieceTypes
 from anki.utility.const import RawTrackPieces
 
-def g(vals, clockwise = 0):
-    return TrackPiece(0,vals[0],clockwise)
+def g(type_: TrackPieceTypes, clockwise: bool = False):
+    return TrackPiece(0,type_,clockwise)
     pass
 
-START = RawTrackPieces.START
-CURVE = RawTrackPieces.CURVE
-STRAIGHT = RawTrackPieces.STRAIGHT
-INTERSECTION = RawTrackPieces.INTERSECTION
-FINISH = RawTrackPieces.FINISH
+START = TrackPieceTypes.START
+FINISH = TrackPieceTypes.FINISH
+CURVE = TrackPieceTypes.CURVE
+STRAIGHT = TrackPieceTypes.STRAIGHT
+INTERSECTION = TrackPieceTypes.INTERSECTION
 
 map = (
     g(START),
-    g(CURVE,255),
-    g(INTERSECTION),
-    g(INTERSECTION),
-    g(CURVE,255),
+    g(CURVE,False),
+    g(CURVE,False),
     g(STRAIGHT),
-    g(CURVE,255),
     g(INTERSECTION),
-    g(CURVE,255),
-    g(CURVE,255),
+    g(INTERSECTION),
+    g(CURVE,True),
+    g(CURVE,True),
+    g(STRAIGHT),
+    g(INTERSECTION),
+    g(CURVE,True),
+    g(STRAIGHT),
+    g(CURVE,True),
+    g(STRAIGHT),
+    g(CURVE,True),
     g(INTERSECTION),
     g(STRAIGHT),
-    g(CURVE,255),
-    g(STRAIGHT),
-    g(CURVE,255),
+    g(CURVE,True),
+    g(CURVE,True),
+    g(INTERSECTION),
+    g(INTERSECTION),
+    g(CURVE,False),
     g(FINISH)
 )
