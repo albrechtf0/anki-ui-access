@@ -7,6 +7,7 @@ __all__ = ("generate")
 
 
 Vismap = list[list[list["Element"]]]
+PositionTracker = list[tuple[int,int,int]]
 Orientation = tuple[Literal[-1,0,1],Literal[-1,0,1]]
 
 @dataclass(repr=False,frozen=True,slots=True)
@@ -53,8 +54,14 @@ def _expand_down(vismap: Vismap):
         pass
     pass
 
-def generate(track_map: list[TrackPiece]) -> tuple[Vismap,list[tuple[int,int,int]]]:
+def generate(
+    track_map: list[TrackPiece],
+    orientation: tuple[int,int] = (1,0)
+) -> tuple[Vismap,PositionTracker]:
     """Creates a 3d map of the track from the 1d version passed as an argument"""
+    if orientation not in _ORIENTATIONS:
+        raise ValueError(f"Passed orientation is not valid. Must be one of {_ORIENTATIONS}")
+
     vismap: Vismap = [[[]]]
     position_tracker = []
 
