@@ -66,7 +66,6 @@ def generate(
     position_tracker = []
 
     head = [0,0]
-    orientation = (1,0)
     for piece in track_map:
         head[0] += orientation[0]
         head[1] += orientation[1]
