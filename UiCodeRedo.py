@@ -67,10 +67,11 @@ class Ui:
         if(len(self._eventList) > 5):
             self._eventList.pop(len(self._eventList)-1)
     
-    def carInfo(self, fahrzeug: anki.Vehicle):
+    def carInfo(self, fahrzeug: anki.Vehicle, number:int):
         surf = pygame.surface.Surface((500,100))
         surf.fill((200,100,200))
         surf.blit(self._font.render(f"Vehicle ID: {fahrzeug.id}",True,(0,0,0)),(10,10))
+        surf.blit(self._font.render(f"Number: {number}",True,(0,0,0)),(400,10))
         surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,(0,0,0)),(10,30))
         surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,(0,0,0)),(10,50))
         surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,(0,0,0)),(10,70))
@@ -78,10 +79,21 @@ class Ui:
         return surf
     
     def carOnMap(self):
+        maping = []
+        for x in range(len(self._visMap)):
+            maping.append([])
+            for y in range(len(self._visMap[x])):
+                maping[x].append([])
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
         for i in range(len(self._fahrzeuge)):
             x, y, _ = self._lookup[self._fahrzeuge[i].map_position]
-            pygame.draw.rect(surf,(0,0,0),(x*100,y*100,10,10),1)
+            maping[x][y].append(i)
+        for x in range(len(maping)):
+            for y in range(len(maping[x])):
+                if (maping[x][y] != []):
+                    for i in range(len(maping[x][y])):
+                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,(0,0,0)),(x*100+100-10*i,y*100+100))
+                        pygame.draw.rect(surf,(0,0,0),(x*100+100-10*i,y*100+100,10,10),1)
         return surf
     
     def _UiThread(self):
@@ -109,7 +121,7 @@ class Ui:
             Ui.blit(EventSurf,(0,self._visMapSurf.get_size()[1]))
             
             for i in range(len(self._fahrzeuge)):
-                Ui.blit(self.carInfo(self._fahrzeuge[i]),(self._visMapSurf.get_size()[0],100*i))
+                Ui.blit(self.carInfo(self._fahrzeuge[i],i),(self._visMapSurf.get_size()[0],100*i))
             
             Ui.blit(self.carOnMap(),(0,0))
             for event in pygame.event.get():
@@ -124,13 +136,15 @@ class Ui:
 async def TestMain():
     print("Start")
     auto1 = await control.connectOne()
-    #auto2 = await control.connectOne()
+    auto2 = await control.connectOne()
+    auto3 = await control.connectOne()
     await control.scan()
-    Uiob = Ui([auto1],control.map)
+    Uiob = Ui([auto1, auto2, auto3],control.map)
     iteration = 0
     print("Constructor finished")
     await auto1.setSpeed(200)
-    #await auto2.setSpeed(300)
+    await auto2.setSpeed(300)
+    await auto3.setSpeed(400)
     try:
         while True:
             await asyncio.sleep(10)
