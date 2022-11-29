@@ -99,13 +99,13 @@ def generate(
         # Adding vismap entry if doing so will not cause two intersections to overlay
         # This is done so that the vismap doesn't always have two intersections for every intersection that exists
         working_cell = vismap[head[0]][head[1]]
+        position_tracker.append((head[0],head[1],len(working_cell)))
         if not(piece.type == TrackPieceTypes.INTERSECTION 
         and len(working_cell) > 0
         and all([
             check.piece.type == TrackPieceTypes.INTERSECTION 
             for check in working_cell
         ])):
-            position_tracker.append((head[0],head[1],len(working_cell)))
             working_cell.append(Element(piece,orientation))
             pass
         else:
