@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
-from VisMapGenerator import generate
+from VisMapGenerator import generate, flip_h
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) #warum auch immer das nötig ist
 
@@ -34,8 +34,9 @@ class Ui:
     def kill(self):
         self._run = False
     
-    def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int]):
-        return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0])))
+    def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int],addition:int=0):
+        
+        return pygame.transform.rotate(surf,math.degrees(-math.atan2(orientation[1],orientation[0]))+addition)
     
     def genGrid(self,visMap,mapsurf):
         for x in range(len(visMap)):
@@ -56,13 +57,16 @@ class Ui:
                 for i in range(len(visMap[x][y])):
                     match visMap[x][y][i].piece.type: #rotating of map pieces to be implemented
                         case TrackPieceTypes.STRAIGHT:
-                            mapSurf.blit(self.rotateSurf(Gerade,visMap[x][y][i].orientation),(x*100,y*100))
+                            mapSurf.blit(self.rotateSurf(Gerade,visMap[x][y][i].orientation,90),(x*100,y*100))
+                            # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.CURVE:
                             mapSurf.blit(self.rotateSurf(Kurve,visMap[x][y][i].orientation),(x*100,y*100))
+                            mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.INTERSECTION:
                             mapSurf.blit(Kreuzung ,(x*100,y*100))
                         case TrackPieceTypes.START:
-                            mapSurf.blit(self.rotateSurf(Start,visMap[x][y][i].orientation),(x*100,y*100))
+                            mapSurf.blit(self.rotateSurf(Start,visMap[x][y][i].orientation,90),(x*100,y*100))
+                            # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.FINISH:
                             pass
                     pass #add object to map
