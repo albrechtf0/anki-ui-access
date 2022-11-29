@@ -37,6 +37,12 @@ class Ui:
     def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int]):
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0])))
     
+    def genGrid(self,visMap,mapsurf):
+        for x in range(len(visMap)):
+            pygame.draw.line(mapsurf,(0,0,0),(x*100,0),(x*100,len(visMap[x])*100))
+        for y in range(len(visMap[x])):
+            pygame.draw.line(mapsurf,(0,0,0),(0,y*100),(len(visMap)*100,y*100))
+        return mapsurf
     def gen_MapSurface(self, visMap):
         print(visMap)
         
@@ -60,7 +66,8 @@ class Ui:
                         case TrackPieceTypes.FINISH:
                             pass
                     pass #add object to map
-        self._visMapSurf = mapSurf
+                
+        self._visMapSurf = self.genGrid(visMap,mapSurf)
     
     def addEvent(self, text:str, color:tuple[int,int,int]):
         self._eventList.insert(0,self._font.render(text,True,color))
@@ -92,8 +99,8 @@ class Ui:
             for y in range(len(maping[x])):
                 if (maping[x][y] != []):
                     for i in range(len(maping[x][y])):
-                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,(0,0,0)),(x*100+100-10*i,y*100+100))
-                        pygame.draw.rect(surf,(0,0,0),(x*100+100-10*i,y*100+100,10,10),1)
+                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,(0,0,0)),(x*100+100-10*(i+1),y*100+90))
+                        pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     
     def _UiThread(self):
@@ -136,15 +143,15 @@ class Ui:
 async def TestMain():
     print("Start")
     auto1 = await control.connectOne()
-    auto2 = await control.connectOne()
-    auto3 = await control.connectOne()
+    #auto2 = await control.connectOne()
+    #auto3 = await control.connectOne()
     await control.scan()
-    Uiob = Ui([auto1, auto2, auto3],control.map)
+    Uiob = Ui([auto1],control.map)
     iteration = 0
     print("Constructor finished")
     await auto1.setSpeed(200)
-    await auto2.setSpeed(300)
-    await auto3.setSpeed(400)
+    #await auto2.setSpeed(300)
+    #await auto3.setSpeed(400)
     try:
         while True:
             await asyncio.sleep(10)
