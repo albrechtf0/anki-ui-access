@@ -7,6 +7,7 @@ __all__ = ("generate")
 
 
 Vismap = list[list[list["Element"]]]
+PositionTracker = list[tuple[int,int,int]]
 Orientation = tuple[Literal[-1,0,1],Literal[-1,0,1]]
 
 @dataclass(repr=False,frozen=True,slots=True)
@@ -53,13 +54,18 @@ def _expand_down(vismap: Vismap):
         pass
     pass
 
-def generate(track_map: list[TrackPiece]) -> tuple[Vismap,list[tuple[int,int,int]]]:
+def generate(
+    track_map: list[TrackPiece],
+    orientation: tuple[int,int] = (1,0)
+) -> tuple[Vismap,PositionTracker]:
     """Creates a 3d map of the track from the 1d version passed as an argument"""
+    if orientation not in _ORIENTATIONS:
+        raise ValueError(f"Passed orientation is not valid. Must be one of {_ORIENTATIONS}")
+
     vismap: Vismap = [[[]]]
     position_tracker = []
 
     head = [0,0]
-    orientation = (1,0)
     for piece in track_map:
         head[0] += orientation[0]
         head[1] += orientation[1]
@@ -93,13 +99,13 @@ def generate(track_map: list[TrackPiece]) -> tuple[Vismap,list[tuple[int,int,int
         # Adding vismap entry if doing so will not cause two intersections to overlay
         # This is done so that the vismap doesn't always have two intersections for every intersection that exists
         working_cell = vismap[head[0]][head[1]]
+        position_tracker.append((head[0],head[1],len(working_cell)))
         if not(piece.type == TrackPieceTypes.INTERSECTION 
         and len(working_cell) > 0
         and all([
             check.piece.type == TrackPieceTypes.INTERSECTION 
             for check in working_cell
         ])):
-            position_tracker.append((head[0],head[1],len(working_cell)))
             working_cell.append(Element(piece,orientation))
             pass
         else:
@@ -110,4 +116,19 @@ def generate(track_map: list[TrackPiece]) -> tuple[Vismap,list[tuple[int,int,int
         pass
 
     return vismap, position_tracker
+    pass
+
+def flip_h(
+    vismap: Vismap, 
+    position_map: list[tuple[int,int,int]]
+) -> tuple[Vismap,PositionTracker]:
+    flipped_vismap = [list(reversed(column)) for column in vismap]
+    
+    column_count = len(vismap)
+    flipped_positions = [
+        (column_count-1-x,y,z) 
+        for x,y,z in position_map
+    ]
+    
+    return flipped_vismap, flipped_positions
     pass
