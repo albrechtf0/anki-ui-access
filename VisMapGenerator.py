@@ -24,7 +24,7 @@ class Element:
 
 _ORIENTATIONS=((1,0),(0,-1),(-1,0),(0,1))
 def _next_orientation(orientation: tuple[int,int], is_clockwise: bool) -> tuple[int,int]:
-    new_index = _ORIENTATIONS.index(orientation) + (1 if is_clockwise else -1)
+    new_index = _ORIENTATIONS.index(orientation) + (1 if not is_clockwise else -1)
     return _ORIENTATIONS[new_index%len(_ORIENTATIONS)]
 
 def _expand_right(vismap: Vismap):
