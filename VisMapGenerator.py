@@ -14,6 +14,8 @@ Orientation = tuple[Literal[-1,0,1],Literal[-1,0,1]]
 class Element:
     piece: TrackPiece
     orientation: Orientation
+    rotation: int|None = None
+    flipped: bool|None = None
 
     def __repr__(self):
         return f"{type(self).__qualname__}({self.piece.type.name},{self.orientation})"
@@ -52,6 +54,37 @@ def _expand_down(vismap: Vismap):
     for column in vismap:
         column.append([])
         pass
+    pass
+
+_CURVE_ROTATIONS_LOOKUP = {
+    ((1,0),(0,-1)) : 0,
+    ((1,0),(0,1)) : 90,
+    ((-1,0),(0,-1)) : 270,
+    ((-1,0),(0,1)) : 180
+}
+
+def orientation_to_rotation(
+    type,
+    orientation: tuple[int,int], 
+    previous_orientation: tuple[int,int]
+) -> tuple[int,bool]:
+    if type == TrackPieceTypes.CURVE:
+        flipped = False
+        try:
+            rotation = _CURVE_ROTATIONS_LOOKUP[
+                (orientation,previous_orientation)
+            ]
+        except KeyError:
+            # Any version with reversed conditions 
+            # has the same rotation
+            rotation = _CURVE_ROTATIONS_LOOKUP[
+                (previous_orientation,orientation)
+            ]
+            flipped = True
+        return rotation, flipped
+        pass
+    elif type == TrackPieceTypes.STRAIGHT:
+        return _ORIENTATIONS.index(orientation)*90, False
     pass
 
 def generate(
