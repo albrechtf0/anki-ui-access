@@ -18,7 +18,7 @@ class Element:
     flipped: bool|None = None
 
     def __repr__(self):
-        return f"{type(self).__qualname__}({self.piece.type.name},{self.orientation})"
+        return f"{type(self).__qualname__}({self.piece.type.name},{self.orientation}[{self.rotation},{self.flipped}])"
         pass
     def __str__(self):
         return repr(self)
@@ -83,8 +83,14 @@ def orientation_to_rotation(
             flipped = True
         return rotation, flipped
         pass
-    elif type == TrackPieceTypes.STRAIGHT:
+    elif type in (
+        TrackPieceTypes.STRAIGHT,
+        TrackPieceTypes.START,
+        TrackPieceTypes.FINISH
+    ):
         return _ORIENTATIONS.index(orientation)*90, False
+    elif type == TrackPieceTypes.INTERSECTION:
+        return 0, False
     pass
 
 def generate(
@@ -99,6 +105,7 @@ def generate(
     position_tracker = []
 
     head = [0,0]
+    previous_orientation = orientation
     for piece in track_map:
         head[0] += orientation[0]
         head[1] += orientation[1]
@@ -139,13 +146,22 @@ def generate(
             check.piece.type == TrackPieceTypes.INTERSECTION 
             for check in working_cell
         ])):
-            working_cell.append(Element(piece,orientation))
+            working_cell.append(Element(
+                piece,
+                orientation,
+                *orientation_to_rotation(
+                    piece.type,
+                    orientation,
+                    previous_orientation
+                )
+            ))
             pass
         else:
             warn(
                 "Ignoring an intersection piece. If you have stacked two intersection pieces, this will cause bugs. If not, you can ignore this warning.",
                 stacklevel=2
             )
+        previous_orientation = orientation
         pass
 
     return vismap, position_tracker
