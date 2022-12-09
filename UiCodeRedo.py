@@ -153,5 +153,6 @@ async def TestMain():
     finally:
         await control.disconnectAll()
 
-control = anki.Controller()
-asyncio.run(TestMain())
+if __name__ == "__main__":
+    control = anki.Controller()
+    asyncio.run(TestMain())
