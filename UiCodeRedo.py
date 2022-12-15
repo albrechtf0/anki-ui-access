@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
-from VisMapGenerator import generate, flip_h
+from VisMapGenerator2 import generate, flip_h
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) #warum auch immer das nötig ist
 
@@ -20,11 +20,11 @@ class Ui:
     _font = None
     _lookup = []
     
-    def __init__(self, fahrzeuge: list[anki.Vehicle], map,flipMap: bool) -> None:
+    def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False) -> None:
         self._fahrzeuge = fahrzeuge
         self._map = map
         if flipMap:
-            self._visMap, self._lookup = flip_h(*generate(self._map,(0,1)))
+            self._visMap, self._lookup = flip_h(*generate(self._map, orientation))
         else:
             self._visMap, self._lookup = generate(self._map,(0,1))
         
@@ -60,8 +60,8 @@ class Ui:
                             mapSurf.blit(self.rotateSurf(Gerade,visMap[x][y][i].orientation,90),(x*100,y*100))
                             # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.CURVE:
-                            mapSurf.blit(self.rotateSurf(Kurve,visMap[x][y][i].orientation),(x*100,y*100))
-                            mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(pygame.transform.rotate(Kurve,visMap[x][y][i].rotation),(x*100,y*100))
+                            mapSurf.blit(self._font.render(f"{visMap[x][y][i].rotation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.INTERSECTION:
                             mapSurf.blit(Kreuzung ,(x*100,y*100))
                         case TrackPieceTypes.START:
@@ -147,7 +147,7 @@ async def TestMain():
     #auto2 = await control.connectOne()
     #auto3 = await control.connectOne()
     await control.scan()
-    Uiob = Ui([auto1],control.map,True)
+    Uiob = Ui([auto1],control.map,(1,0),True)
     iteration = 0
     print("Constructor finished")
     await auto1.setSpeed(200)
