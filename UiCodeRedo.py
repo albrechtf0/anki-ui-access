@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
-from VisMapGenerator2 import generate, flip_h
+from VisMapGenerator import generate, flip_h
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) #warum auch immer das nötig ist
 
@@ -55,18 +55,23 @@ class Ui:
         for x in range(len(visMap)):
             for y in range(len(visMap[x])):
                 for i in range(len(visMap[x][y])):
-                    match visMap[x][y][i].piece.type:
+                    current = visMap[x][y][i]
+                    match current.piece.type:
                         case TrackPieceTypes.STRAIGHT:
-                            mapSurf.blit(self.rotateSurf(Gerade,visMap[x][y][i].orientation,90),(x*100,y*100))
-                            # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(self.rotateSurf(Gerade,current.orientation,90),(x*100,y*100))
+                            # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.CURVE:
-                            mapSurf.blit(pygame.transform.rotate(Kurve,visMap[x][y][i].rotation),(x*100,y*100))
-                            mapSurf.blit(self._font.render(f"{visMap[x][y][i].rotation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(pygame.transform.rotate(Kurve,current.rotation),(x*100,y*100))
+                            mapSurf.blit(self._font.render(
+                                f"{current.rotation} {current.orientation} {int(current.flipped)}",
+                                True,
+                                (100,100,100)
+                            ),(x*100,y*100))
                         case TrackPieceTypes.INTERSECTION:
                             mapSurf.blit(Kreuzung ,(x*100,y*100))
                         case TrackPieceTypes.START:
-                            mapSurf.blit(self.rotateSurf(Start,visMap[x][y][i].orientation,90),(x*100,y*100))
-                            # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(self.rotateSurf(Start,current.orientation,90),(x*100,y*100))
+                            # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.FINISH:
                             pass
         self._visMapSurf = self.genGrid(visMap,mapSurf)
@@ -138,6 +143,9 @@ class Ui:
             pygame.display.update()
             clock.tick(60)
     
+    def waitForFinish(self, timeout: float|None=None) -> bool:
+        self._thread.join(timeout)
+        return self._thread.is_alive()
     pass
 
 

@@ -29,6 +29,12 @@ def _next_orientation(orientation: tuple[int,int], is_clockwise: bool) -> tuple[
     new_index = _ORIENTATIONS.index(orientation) + (1 if not is_clockwise else -1)
     return _ORIENTATIONS[new_index%len(_ORIENTATIONS)]
 
+def _invert_orientation(o: tuple[int,int]) -> tuple[int,int]:
+    # Inverts the orientation. 
+    # This just changes the sign of the components
+    return (-o[0],-o[1])
+    pass
+
 def _expand_right(vismap: Vismap):
     vismap.append(
         [[] for _ in range(len(vismap[0]))]
@@ -58,10 +64,14 @@ def _expand_down(vismap: Vismap):
 
 _CURVE_ROTATIONS_LOOKUP = {
     ((1,0),(0,-1)) : 0,
-    ((1,0),(0,1)) : 90,
-    ((-1,0),(0,-1)) : 270,
-    ((-1,0),(0,1)) : 180
+    ((-1,0),(0,-1)) : 90,
+    ((-1,0),(0,1)) : 180,
+    ((1,0),(0,1)) : 270
 }
+"""
+This is a from-to lookup table. It is NOT directly using the previous
+piece orientation. The previous piece orientation has to be inverted.
+"""
 
 def orientation_to_rotation(
     type,
@@ -72,15 +82,15 @@ def orientation_to_rotation(
         flipped = False
         try:
             rotation = _CURVE_ROTATIONS_LOOKUP[
-                (orientation,previous_orientation)
+                (orientation,_invert_orientation(previous_orientation))
             ]
         except KeyError:
             # Any version with reversed conditions 
             # has the same rotation
             rotation = _CURVE_ROTATIONS_LOOKUP[
-                (previous_orientation,orientation)
+                (_invert_orientation(previous_orientation),orientation)
             ]
-            flipped = True
+            flipped = False
         return rotation, flipped
         pass
     elif type in (
@@ -167,11 +177,26 @@ def generate(
     return vismap, position_tracker
     pass
 
+def h_rotation_flip(r: int) -> int: return 90-(r%180) + (r//180)*180
+
 def flip_h(
     vismap: Vismap, 
     position_map: list[tuple[int,int,int]]
 ) -> tuple[Vismap,PositionTracker]:
-    flipped_vismap = [list(reversed(column)) for column in vismap]
+    flipped_vismap = [
+        [
+            [
+                Element(
+                    e.piece,
+                    (-e.orientation[0],e.orientation[1]),
+                    h_rotation_flip(e.rotation)
+                )
+                for e in position
+            ]
+            for position in reversed(column)
+        ] 
+        for column in vismap
+    ]
     
     column_count = len(vismap)
     flipped_positions = [
