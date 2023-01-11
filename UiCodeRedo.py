@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
-from VisMapGenerator import generate, flip_h
+from VisMapGenerator import generate, flip_h, Vismap
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) #warum auch immer das nötig ist
 
@@ -48,7 +48,7 @@ class Ui:
         for y in range(len(visMap[x])):
             pygame.draw.line(mapsurf,(0,0,0),(0,y*100),(len(visMap)*100,y*100))
         return mapsurf
-    def gen_MapSurface(self, visMap):
+    def gen_MapSurface(self, visMap: Vismap):
         Gerade = pygame.image.load("Gerade.png")
         Kurve = pygame.image.load("Kurve.png")
         Kreuzung = pygame.image.load("Kreuzung.png")
