@@ -11,14 +11,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__))) #warum auch immer das nöti
 
 
 class Ui:
-    _fahrzeuge = []
-    _run = True
-    _map = []
-    _visMap = None
-    _visMapSurf = None
-    _eventList : list[pygame.surface.Surface] = []
-    _font = None
-    _lookup = []
+    # _fahrzeuge = []
+    # _run = True
+    # _map = []
+    # _visMap = None
+    # _visMapSurf = None
+    # _eventList : list[pygame.surface.Surface] = []
+    # _font = None
+    # _lookup = []
     
     def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False) -> None:
         self._fahrzeuge = fahrzeuge
@@ -30,6 +30,9 @@ class Ui:
         pygame.init()
         self._font = pygame.font.SysFont("Arial",20)
         
+        self._eventList: list[pygame.Surface] = []
+        self._visMapSurf: pygame.Surface = None
+        self._run = True
         self._thread =  threading.Thread(target=self._UiThread,daemon=True)
         self._thread.start()
     
