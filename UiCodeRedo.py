@@ -148,6 +148,9 @@ class Ui:
     def waitForFinish(self, timeout: float|None=None) -> bool:
         self._thread.join(timeout)
         return self._thread.is_alive()
+    
+    async def waitForFinishAsync(self, timeout: float|None=None) -> bool:
+        return await asyncio.get_running_loop().run_in_executor(None,self.waitForFinish,timeout)
     pass
 
 
