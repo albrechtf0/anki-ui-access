@@ -42,18 +42,29 @@ def _expand_right(vismap: Vismap):
     )
     pass
 
-def _expand_left(vismap: Vismap):
+def _expand_left(vismap: Vismap, position_tracker: PositionTracker):
     vismap.insert(
         0,
         [[] for _ in range(len(vismap[0]))]
         # len(vismap[0]) is the column length (i.e. row count)
     )
+
+    prev_tracker = position_tracker.copy()
+    position_tracker.clear()
+    for x,y,z in prev_tracker:
+        position_tracker.append((x+1,y,z))
+        pass
     pass
 
-def _expand_up(vismap: Vismap):
+def _expand_up(vismap: Vismap, position_tracker: PositionTracker):
     for column in vismap:
         column.insert(0,[])
         pass
+    
+    prev_tracker = position_tracker.copy()
+    position_tracker.clear()
+    for x,y,z in prev_tracker:
+        position_tracker.append((x,y+1,z))
     pass
 
 def _expand_down(vismap: Vismap):
@@ -127,7 +138,7 @@ def generate(
             pass
         elif head[0] < 0: 
             # If not enough columns to the left
-            _expand_left(vismap)
+            _expand_left(vismap,position_tracker)
             head[0]+=1
             pass
         if head[1] > len(vismap[0])-1:
@@ -136,7 +147,7 @@ def generate(
             pass
         elif head[1] < 0:
             # If not enough rows up
-            _expand_up(vismap)
+            _expand_up(vismap,position_tracker)
             head[1]+=1
             # Incrementing head, because the vismap has now shifted
             pass
