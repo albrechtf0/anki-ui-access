@@ -160,7 +160,7 @@ async def TestMain():
     #auto2 = await control.connectOne()
     #auto3 = await control.connectOne()
     await control.scan()
-    Uiob = Ui([auto1],control.map,(1,0),True)
+    Uiob = Ui([auto1],control.map,(1,0),False)
     iteration = 0
     print("Constructor finished")
     await auto1.setSpeed(200)
