@@ -65,7 +65,7 @@ class Ui:
                         case TrackPieceTypes.CURVE:
                             mapSurf.blit(pygame.transform.rotate(Kurve,current.rotation),(x*100,y*100))
                             mapSurf.blit(self._font.render(
-                                f"{current.rotation} {current.orientation} {int(current.flipped)}",
+                                f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
                                 True,
                                 (100,100,100)
                             ),(x*100,y*100))
