@@ -23,10 +23,9 @@ class Ui:
     def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False) -> None:
         self._fahrzeuge = fahrzeuge
         self._map = map
+        self._visMap, self._lookup = generate(self._map, orientation)
         if flipMap:
-            self._visMap, self._lookup = flip_h(*generate(self._map, orientation))
-        else:
-            self._visMap, self._lookup = generate(self._map,(0,1))
+            self._visMap, self._lookup = flip_h(self._visMap,self._lookup)
         
         pygame.init()
         self._font = pygame.font.SysFont("Arial",20)
