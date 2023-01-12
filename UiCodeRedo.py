@@ -47,6 +47,7 @@ class Ui:
             pygame.draw.line(mapsurf,(0,0,0),(x*100,0),(x*100,len(visMap[x])*100))
         for y in range(len(visMap[x])):
             pygame.draw.line(mapsurf,(0,0,0),(0,y*100),(len(visMap)*100,y*100))
+        pygame.draw.rect(mapsurf,(0,0,0),(0,0,len(visMap)*100, len(visMap[0])*100),1)
         return mapsurf
     def gen_MapSurface(self, visMap: Vismap):
         Gerade = pygame.image.load("Gerade.png")
@@ -64,11 +65,11 @@ class Ui:
                             # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.CURVE:
                             mapSurf.blit(pygame.transform.rotate(Kurve,current.rotation),(x*100,y*100))
-                            mapSurf.blit(self._font.render(
-                                f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
-                                True,
-                                (100,100,100)
-                            ),(x*100,y*100))
+                            #mapSurf.blit(self._font.render(
+                            #    f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
+                            #    True,
+                            #    (100,100,100)
+                            #),(x*100,y*100))
                         case TrackPieceTypes.INTERSECTION:
                             mapSurf.blit(Kreuzung ,(x*100,y*100))
                         case TrackPieceTypes.START:
@@ -120,19 +121,16 @@ class Ui:
         pygame.display.set_icon(Logo)
         pygame.display.set_caption("Anki Ui Access")
         clock = pygame.time.Clock()
-        
+        EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
         run = True
         while(self._run):
             Ui.fill((100,150,100))
             Ui.blit(self._visMapSurf,(0,0))
             
-            EventSurf = pygame.surface.Surface(
-                (max(self._eventList,key= lambda val: val.get_size()[0]).get_size()[0] +20 , 
-                200)
-            ) 
             EventSurf.fill((100,150,150))
             for i in range(len(self._eventList)):
                 EventSurf.blit(self._eventList[i],(10,i*20))
+            pygame.draw.rect(EventSurf,(0,0,0),(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),1)
             Ui.blit(EventSurf,(0,self._visMapSurf.get_size()[1]))
             
             for i in range(len(self._fahrzeuge)):
