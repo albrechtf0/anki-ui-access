@@ -5,32 +5,34 @@ sys.path.append(os.getcwd())
 import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
-from VisMapGenerator2 import generate, flip_h
+from VisMapGenerator import generate, flip_h, Vismap
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) #warum auch immer das nötig ist
 
 
 class Ui:
-    _fahrzeuge = []
-    _run = True
-    _map = []
-    _visMap = None
-    _visMapSurf = None
-    _eventList : list[pygame.surface.Surface] = []
-    _font = None
-    _lookup = []
+    # _fahrzeuge = []
+    # _run = True
+    # _map = []
+    # _visMap = None
+    # _visMapSurf = None
+    # _eventList : list[pygame.surface.Surface] = []
+    # _font = None
+    # _lookup = []
     
     def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False) -> None:
         self._fahrzeuge = fahrzeuge
         self._map = map
+        self._visMap, self._lookup = generate(self._map, orientation)
         if flipMap:
-            self._visMap, self._lookup = flip_h(*generate(self._map, orientation))
-        else:
-            self._visMap, self._lookup = generate(self._map,(0,1))
+            self._visMap, self._lookup = flip_h(self._visMap,self._lookup)
         
         pygame.init()
         self._font = pygame.font.SysFont("Arial",20)
         
+        self._eventList: list[pygame.Surface] = []
+        self._visMapSurf: pygame.Surface = None
+        self._run = True
         self._thread =  threading.Thread(target=self._UiThread,daemon=True)
         self._thread.start()
     
@@ -46,7 +48,7 @@ class Ui:
         for y in range(len(visMap[x])):
             pygame.draw.line(mapsurf,(0,0,0),(0,y*100),(len(visMap)*100,y*100))
         return mapsurf
-    def gen_MapSurface(self, visMap):
+    def gen_MapSurface(self, visMap: Vismap):
         Gerade = pygame.image.load("Gerade.png")
         Kurve = pygame.image.load("Kurve.png")
         Kreuzung = pygame.image.load("Kreuzung.png")
@@ -55,18 +57,23 @@ class Ui:
         for x in range(len(visMap)):
             for y in range(len(visMap[x])):
                 for i in range(len(visMap[x][y])):
-                    match visMap[x][y][i].piece.type:
+                    current = visMap[x][y][i]
+                    match current.piece.type:
                         case TrackPieceTypes.STRAIGHT:
-                            mapSurf.blit(self.rotateSurf(Gerade,visMap[x][y][i].orientation,90),(x*100,y*100))
-                            # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(self.rotateSurf(Gerade,current.orientation,90),(x*100,y*100))
+                            # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.CURVE:
-                            mapSurf.blit(pygame.transform.rotate(Kurve,visMap[x][y][i].rotation),(x*100,y*100))
-                            mapSurf.blit(self._font.render(f"{visMap[x][y][i].rotation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(pygame.transform.rotate(Kurve,current.rotation),(x*100,y*100))
+                            mapSurf.blit(self._font.render(
+                                f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
+                                True,
+                                (100,100,100)
+                            ),(x*100,y*100))
                         case TrackPieceTypes.INTERSECTION:
                             mapSurf.blit(Kreuzung ,(x*100,y*100))
                         case TrackPieceTypes.START:
-                            mapSurf.blit(self.rotateSurf(Start,visMap[x][y][i].orientation,90),(x*100,y*100))
-                            # mapSurf.blit(self._font.render(f"{visMap[x][y][i].orientation}",True,(100,100,100)),(x*100,y*100))
+                            mapSurf.blit(self.rotateSurf(Start,current.orientation,90),(x*100,y*100))
+                            # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.FINISH:
                             pass
         self._visMapSurf = self.genGrid(visMap,mapSurf)
@@ -138,6 +145,12 @@ class Ui:
             pygame.display.update()
             clock.tick(60)
     
+    def waitForFinish(self, timeout: float|None=None) -> bool:
+        self._thread.join(timeout)
+        return self._thread.is_alive()
+    
+    async def waitForFinishAsync(self, timeout: float|None=None) -> bool:
+        return await asyncio.get_running_loop().run_in_executor(None,self.waitForFinish,timeout)
     pass
 
 
@@ -147,7 +160,7 @@ async def TestMain():
     #auto2 = await control.connectOne()
     #auto3 = await control.connectOne()
     await control.scan()
-    Uiob = Ui([auto1],control.map,(1,0),True)
+    Uiob = Ui([auto1],control.map,(1,0),False)
     iteration = 0
     print("Constructor finished")
     await auto1.setSpeed(200)
@@ -161,5 +174,6 @@ async def TestMain():
     finally:
         await control.disconnectAll()
 
-control = anki.Controller()
-asyncio.run(TestMain())
+if __name__ == "__main__":
+    control = anki.Controller()
+    asyncio.run(TestMain())
