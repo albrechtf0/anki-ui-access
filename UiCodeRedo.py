@@ -122,39 +122,6 @@ class Ui:
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     
-    def _UiThread(self):
-        self.addEvent("Started Ui",(0,0,0))
-        self.gen_MapSurface(self._visMap)
-        if self.showUi:
-            Ui = pygame.display.set_mode((1000,600),pygame.SCALED)
-            Logo = pygame.image.load(relative_to_file("Logo.png"))
-            pygame.display.set_icon(Logo)
-            pygame.display.set_caption(relative_to_file("Anki Ui Access"))
-        self.UiSurf = pygame.surface.Surface((1000,600))
-        clock = pygame.time.Clock()
-        EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
-        run = True
-        while(self._run):
-            self.UiSurf.fill((100,150,100))
-            self.UiSurf.blit(self._visMapSurf,(0,0))
-            
-            EventSurf.fill((100,150,150))
-            for i in range(len(self._eventList)):
-                EventSurf.blit(self._eventList[i],(10,i*20))
-            pygame.draw.rect(EventSurf,(0,0,0),(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),1)
-            self.UiSurf.blit(EventSurf,(0,self._visMapSurf.get_size()[1]))
-            
-            for i in range(len(self._fahrzeuge)):
-                self.UiSurf.blit(self.carInfo(self._fahrzeuge[i],i),(self._visMapSurf.get_size()[0],100*i))
-            self.UiSurf.blit(self.carOnMap(),(0,0))
-            if self.showUi:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self._run = False
-                Ui.blit(self.UiSurf,(0,0))
-                pygame.display.update()
-            clock.tick(self.fps)
-    
     def getUiSurf(self) -> pygame.Surface: 
         return self.UiSurf
     def getCarSurfs(self) -> list(pygame.Surface):
@@ -170,6 +137,35 @@ class Ui:
             EventSurf.blit(self._eventList[i],(10,i*20))
         pygame.draw.rect(EventSurf,(0,0,0),(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),1)
         return EventSurf
+    
+    def _UiThread(self):
+        self.addEvent("Started Ui",(0,0,0))
+        self.gen_MapSurface(self._visMap)
+        if self.showUi:
+            Ui = pygame.display.set_mode((1000,600),pygame.SCALED)
+            Logo = pygame.image.load(relative_to_file("Logo.png"))
+            pygame.display.set_icon(Logo)
+            pygame.display.set_caption(relative_to_file("Anki Ui Access"))
+        self.UiSurf = pygame.surface.Surface((1000,600))
+        clock = pygame.time.Clock()
+        EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
+        while(self._run):
+            self.UiSurf.fill((100,150,100))
+            self.UiSurf.blit(self._visMapSurf,(0,0))
+            
+            self.UiSurf.blit(self.getEventSurf(),(0,self._visMapSurf.get_size()[1]))
+            
+            for i in range(len(self._fahrzeuge)):
+                self.UiSurf.blit(self.carInfo(self._fahrzeuge[i],i),(self._visMapSurf.get_size()[0],100*i))
+            self.UiSurf.blit(self.carOnMap(),(0,0))
+            if self.showUi:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self._run = False
+                Ui.blit(self.UiSurf,(0,0))
+                pygame.display.update()
+            clock.tick(self.fps)
+    
     
     def waitForFinish(self, timeout: float|None=None) -> bool:
         self._thread.join(timeout)
