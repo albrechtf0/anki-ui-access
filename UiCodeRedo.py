@@ -26,7 +26,7 @@ class Ui:
     # _font = None
     # _lookup = []
     
-    def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True, fps: float = 60) -> None:
+    def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True, fps: int = 60) -> None:
         self._fahrzeuge = fahrzeuge
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
@@ -157,6 +157,19 @@ class Ui:
     
     def getUiSurf(self) -> pygame.Surface: 
         return self.UiSurf
+    def getCarSurfs(self) -> list(pygame.Surface):
+        return [self.carInfo(self._fahrzeuge[i],i) for i in range(len(self._fahrzeuge)) ]
+    def getMapsurf(self):
+        return self._visMapSurf
+    def getCarsOnMap(self):
+        return self.carOnMap()
+    def getEventSurf(self):
+        EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
+        EventSurf.fill((100,150,150))
+        for i in range(len(self._eventList)):
+            EventSurf.blit(self._eventList[i],(10,i*20))
+        pygame.draw.rect(EventSurf,(0,0,0),(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),1)
+        return EventSurf
     
     def waitForFinish(self, timeout: float|None=None) -> bool:
         self._thread.join(timeout)
