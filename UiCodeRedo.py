@@ -166,6 +166,8 @@ class Ui:
                 pygame.display.update()
             clock.tick(self.fps)
     
+    def addVehicle(self, Vehicle:anki.Vehicle):
+        self._fahrzeuge.append(Vehicle)
     
     def waitForFinish(self, timeout: float|None=None) -> bool:
         self._thread.join(timeout)
