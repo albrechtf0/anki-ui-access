@@ -96,12 +96,14 @@ class Ui:
     def carInfo(self, fahrzeug: anki.Vehicle, number:int):
         surf = pygame.surface.Surface((500,100))
         surf.fill((200,100,200))
-        surf.blit(self._font.render(f"Vehicle ID: {fahrzeug.id}",True,(0,0,0)),(10,10))
-        surf.blit(self._font.render(f"Number: {number}",True,(0,0,0)),(400,10))
-        surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,(0,0,0)),(10,30))
-        surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,(0,0,0)),(10,50))
-        surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,(0,0,0)),(10,70))
-        
+        try:
+            surf.blit(self._font.render(f"Vehicle ID: {fahrzeug.id}",True,(0,0,0)),(10,10))
+            surf.blit(self._font.render(f"Number: {number}",True,(0,0,0)),(400,10))
+            surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,(0,0,0)),(10,30))
+            surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,(0,0,0)),(10,50))
+            surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,(0,0,0)),(10,70))
+        except Exception as e:
+            surf.blit(self._font.render(f"Invalid information: {e}",True,(0,0,0)),(10,10))
         return surf
     
     def carOnMap(self):
@@ -124,7 +126,7 @@ class Ui:
     
     def getUiSurf(self) -> pygame.Surface: 
         return self.UiSurf
-    def getCarSurfs(self) -> list(pygame.Surface):
+    def getCarSurfs(self) -> list[pygame.Surface]:
         return [self.carInfo(self._fahrzeuge[i],i) for i in range(len(self._fahrzeuge)) ]
     def getMapsurf(self):
         return self._visMapSurf
