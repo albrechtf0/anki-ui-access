@@ -105,7 +105,7 @@ class Ui:
             for y in range(len(maping[x])):
                 if (maping[x][y] != []):
                     for i in range(len(maping[x][y])):
-                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,(0,0,0)),(x*100+100-10*(i+1),y*100+80))
+                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,(150,0,150)),(x*100+100-10*(i+1),y*100+80))
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     
