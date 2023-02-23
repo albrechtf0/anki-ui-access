@@ -16,18 +16,9 @@ def relative_to_file(relpath: str) -> str:
     )
     pass
 
-class Ui:
-    # _fahrzeuge = []
-    # _run = True
-    # _map = []
-    # _visMap = None
-    # _visMapSurf = None
-    # _eventList : list[pygame.surface.Surface] = []
-    # _font = None
-    # _lookup = []
-    
-    def __init__(self, fahrzeuge: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True, fps: int = 60) -> None:
-        self._fahrzeuge = fahrzeuge
+class Ui:    
+    def __init__(self, vehicles: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True, fps: int = 60) -> None:
+        self._vehicles = vehicles
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
         if flipMap:
@@ -50,7 +41,6 @@ class Ui:
     
     def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int],addition:int=0):
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
-    
     def genGrid(self,visMap,mapsurf):
         for x in range(len(visMap)):
             pygame.draw.line(mapsurf,(0,0,0),(x*100,0),(x*100,len(visMap[x])*100))
@@ -88,11 +78,6 @@ class Ui:
                             pass
         self._visMapSurf = self.genGrid(visMap,mapSurf)
     
-    def addEvent(self, text:str, color:tuple[int,int,int]):
-        self._eventList.insert(0,self._font.render(text,True,color))
-        if(len(self._eventList) > 5):
-            self._eventList.pop(len(self._eventList)-1)
-    
     def carInfo(self, fahrzeug: anki.Vehicle, number:int):
         surf = pygame.surface.Surface((500,100))
         surf.fill((200,100,200))
@@ -113,8 +98,8 @@ class Ui:
             for y in range(len(self._visMap[x])):
                 maping[x].append([])
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
-        for i in range(len(self._fahrzeuge)):
-            x, y, _ = self._lookup[self._fahrzeuge[i].map_position]
+        for i in range(len(self._vehicles)):
+            x, y, _ = self._lookup[self._vehicles[i].map_position]
             maping[x][y].append(i)
         for x in range(len(maping)):
             for y in range(len(maping[x])):
@@ -124,15 +109,20 @@ class Ui:
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     
+    #methods for user interaction
+    def addEvent(self, text:str, color:tuple[int,int,int]):
+        self._eventList.insert(0,self._font.render(text,True,color))
+        if(len(self._eventList) > 5):
+            self._eventList.pop(len(self._eventList)-1)
     def getUiSurf(self) -> pygame.Surface: 
         return self.UiSurf
     def getCarSurfs(self) -> list[pygame.Surface]:
-        return [self.carInfo(self._fahrzeuge[i],i) for i in range(len(self._fahrzeuge)) ]
-    def getMapsurf(self):
+        return [self.carInfo(self._vehicles[i],i) for i in range(len(self._vehicles)) ]
+    def getMapsurf(self) -> pygame.surface:
         return self._visMapSurf
-    def getCarsOnMap(self):
+    def getCarsOnMap(self) -> pygame.surface:
         return self.carOnMap()
-    def getEventSurf(self):
+    def getEventSurf(self) -> pygame.surface:
         EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
         EventSurf.fill((100,150,150))
         for i in range(len(self._eventList)):
@@ -140,6 +130,7 @@ class Ui:
         pygame.draw.rect(EventSurf,(0,0,0),(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),1)
         return EventSurf
     
+    #The Code that showes the Ui
     def _UiThread(self):
         self.addEvent("Started Ui",(0,0,0))
         self.gen_MapSurface(self._visMap)
@@ -157,8 +148,8 @@ class Ui:
             
             self.UiSurf.blit(self.getEventSurf(),(0,self._visMapSurf.get_size()[1]))
             
-            for i in range(len(self._fahrzeuge)):
-                self.UiSurf.blit(self.carInfo(self._fahrzeuge[i],i),(self._visMapSurf.get_size()[0],100*i))
+            for i in range(len(self._vehicles)):
+                self.UiSurf.blit(self.carInfo(self._vehicles[i],i),(self._visMapSurf.get_size()[0],100*i))
             self.UiSurf.blit(self.carOnMap(),(0,0))
             if self.showUi:
                 for event in pygame.event.get():
@@ -169,7 +160,7 @@ class Ui:
             clock.tick(self.fps)
     
     def addVehicle(self, Vehicle:anki.Vehicle):
-        self._fahrzeuge.append(Vehicle)
+        self._vehicles.append(Vehicle)
     
     def waitForFinish(self, timeout: float|None=None) -> bool:
         self._thread.join(timeout)
