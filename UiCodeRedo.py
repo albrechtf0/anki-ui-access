@@ -4,6 +4,8 @@ import math
 import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
+from VehicleControlWindow import vehicleControler
+
 try:
     from .VisMapGenerator import generate, flip_h, Vismap
 except ImportError:
@@ -17,7 +19,7 @@ def relative_to_file(relpath: str) -> str:
     pass
 
 class Ui:    
-    def __init__(self, vehicles: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True, fps: int = 60) -> None:
+    def __init__(self, vehicles: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True,showControler:bool = False, fps: int = 60) -> None:
         self._vehicles = vehicles
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
@@ -26,7 +28,7 @@ class Ui:
         self.showUi = showUi
         self.fps = fps
         self.UiSurf = None
-        
+        self._vehicleControler:vehicleControler = None
         pygame.init()
         self._font = pygame.font.SysFont("Arial",20)
         
@@ -35,6 +37,9 @@ class Ui:
         self._run = True
         self._thread =  threading.Thread(target=self._UiThread,daemon=True)
         self._thread.start()
+        if showControler:
+            controlThread = threading.Thread(target=vehicleControler,args=[vehicles,asyncio.get_running_loop()] ,daemon=True)
+            controlThread.start()
     
     def kill(self):
         self._run = False
