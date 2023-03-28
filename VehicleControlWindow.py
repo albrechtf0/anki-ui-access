@@ -24,10 +24,10 @@ class vehicleControler:
                 task.add_done_callback(lambda t: print(t,"is done!"))
                 print(f"ChangingLane to{ln}")
     
-    def __init__(self,vehicles:list[anki.Vehicle], eventLoop:asyncio.AbstractEventLoop) -> None:
+    def __init__(self,vehicles:list[anki.Vehicle], eventLoop:asyncio.AbstractEventLoop,customLanes:list[_Lane]=[]) -> None:
         self.vehicles = vehicles
         self.eventLoop:asyncio.AbstractEventLoop = eventLoop
-        self.lanes = anki.Lane3.getAll()+anki.Lane4.getAll()
+        self.lanes = anki.Lane3.getAll()+anki.Lane4.getAll()+customLanes
         root = Tk()
         root.title("Vehicle Control")
         

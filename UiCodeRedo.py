@@ -5,6 +5,7 @@ import anki, asyncio, pygame
 from anki import TrackPieceTypes
 import threading
 from VehicleControlWindow import vehicleControler
+from anki.utility.lanes import _Lane
 
 try:
     from .VisMapGenerator import generate, flip_h, Vismap
@@ -19,7 +20,7 @@ def relative_to_file(relpath: str) -> str:
     pass
 
 class Ui:    
-    def __init__(self, vehicles: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True,showControler:bool = False, fps: int = 60) -> None:
+    def __init__(self, vehicles: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True,showControler:bool = False, fps: int = 60,customLanes:list[_Lane]=[]) -> None:
         self._vehicles = vehicles
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
@@ -38,7 +39,7 @@ class Ui:
         self._thread =  threading.Thread(target=self._UiThread,daemon=True)
         self._thread.start()
         if showControler:
-            controlThread = threading.Thread(target=vehicleControler,args=[vehicles,asyncio.get_running_loop()] ,daemon=True)
+            controlThread = threading.Thread(target=vehicleControler,args=[vehicles,asyncio.get_running_loop(),customLanes] ,daemon=True)
             controlThread.start()
     
     def kill(self):
@@ -93,7 +94,7 @@ class Ui:
             surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,(0,0,0)),(10,50))
             surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,(0,0,0)),(10,70))
         except Exception as e:
-            surf.blit(self._font.render(f"Invalid information: {e}",True,(0,0,0)),(10,10))
+            surf.blit(self._font.render(f"Invalid information:\n{e}",True,(0,0,0)),(10,10))
         return surf
     
     def carOnMap(self):
