@@ -18,11 +18,8 @@ class vehicleControler:
     def changeLane(self,vehicleSelection: list[IntVar],lane:StringVar,laneSpeed: IntVar):
         ln = next(filter(lambda x: x.lane_name == lane.get(),self.lanes))
         for i in range(len(vehicleSelection)):
-            print("cVeh")
             if(vehicleSelection[i].get() == 1):
                 task = self.eventLoop.create_task(self.vehicles[i].changeLane(ln,laneSpeed.get()))
-                task.add_done_callback(lambda t: print(t,"is done!"))
-                print(f"ChangingLane to{ln}")
     
     def __init__(self,vehicles:list[anki.Vehicle], eventLoop:asyncio.AbstractEventLoop,customLanes:list[_Lane]=[]) -> None:
         self.vehicles = vehicles
@@ -52,5 +49,5 @@ class vehicleControler:
             btn = ttk.Checkbutton(vSfrm,text=f"Vehicle {i}",variable=vSStates[i],state=0).grid(column=0,row=i)
         lsLane = StringVar(frm)
         ttk.OptionMenu(frm,lsLane,None,*self.lanes).grid(column=0,row=3)
-        ttk.Button(frm,text="Change Lane",command=lambda:self.changeLane(vSStates,lsLane)).grid(column=0, row=4 )
+        ttk.Button(frm,text="Change Lane",command=lambda:self.changeLane(vSStates,lsLane,laneSpeed)).grid(column=0, row=4 )
         root.mainloop()
