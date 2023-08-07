@@ -66,9 +66,11 @@ class Ui:
                     current = visMap[x][y][i]
                     match current.piece.type:
                         case TrackPieceTypes.STRAIGHT:
-                            mapSurf.blit(self.rotateSurf(Gerade,current.orientation,90),(x*100,y*100))
+                            Gerade.set_alpha((1.5**-i)*255)
+                            mapSurf.blit( self.rotateSurf(Gerade,current.orientation,90),(x*100,y*100))
                             # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.CURVE:
+                            Kurve.set_alpha((1.5**-i)*255)
                             mapSurf.blit(pygame.transform.rotate(Kurve,current.rotation),(x*100,y*100))
                             #mapSurf.blit(self._font.render(
                             #    f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
@@ -76,8 +78,10 @@ class Ui:
                             #    (100,100,100)
                             #),(x*100,y*100))
                         case TrackPieceTypes.INTERSECTION:
-                            mapSurf.blit(Kreuzung ,(x*100,y*100))
+                            Kreuzung.set_alpha((1.5**-i)*255)
+                            mapSurf.blit(Kreuzung, (x*100,y*100))
                         case TrackPieceTypes.START:
+                            Start.set_alpha((1.5**-i)*255)
                             mapSurf.blit(self.rotateSurf(Start,current.orientation,90),(x*100,y*100))
                             # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.FINISH:
