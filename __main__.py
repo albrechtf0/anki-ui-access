@@ -12,9 +12,9 @@ async def main():
         auto1 = await control.connectOne()
         #auto2 = await control.connectOne()
         #auto3 = await control.connectOne()
-        #await control.scan()
+        await control.scan()
         
-        with Ui([auto1],fakeMap(),(1,0),False,True,True) as Uiob:
+        with Ui([auto1],control.map,(1,0),False,True) as Uiob:
             print("Constructor finished")
             #await auto1.setSpeed(200)
             #await auto2.setSpeed(300)
@@ -39,7 +39,11 @@ def fakeMap():
         anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,True),
         anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,True),
         anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,True),
-        anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,True),
+        anki.TrackPiece(0,anki.TrackPieceTypes.STRAIGHT,True),
+        anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,False),
+        anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,False),
+        anki.TrackPiece(0,anki.TrackPieceTypes.CURVE,False),
+        anki.TrackPiece(0,anki.TrackPieceTypes.STRAIGHT,False),
         anki.TrackPiece(0,anki.TrackPieceTypes.FINISH,False)]
     return map
 
