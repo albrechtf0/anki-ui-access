@@ -1,0 +1,7 @@
+Background = (100,150,100)
+Lines = (0,0,0)
+Text = (0,0,0)
+CarPosText = (150,0,150)
+ButtonFill = (180,180,180,100)
+EventFill = (100,150,150)
+CarInfoFill = (200,100,200)
