@@ -41,6 +41,7 @@ class Ui:
         self._eventLoop = asyncio.get_running_loop()
         self._controlThread = None
         self._customLanes = customLanes
+        self._carInfoOffset = 0
         if showControler:
             self.startControler()
     
@@ -157,9 +158,22 @@ class Ui:
             BtnRect = pygame.rect.Rect((0,0,*BtnText.get_size()))
             pygame.draw.rect(Button,(0,0,0),BtnRect,1)
             Button.blit(BtnText,(0,0)) 
+            UpArrow = self._font.render("▲",True,(0,0,0))
+            DownArrow = self._font.render("▼", True,(0,0,0))
+            UpRect = pygame.rect.Rect(
+                (self._visMapSurf.get_width()-UpArrow.get_width(),0,*UpArrow.get_size()))
+            DownRect = pygame.rect.Rect(
+                    self._visMapSurf.get_width()-DownArrow.get_width(),
+                    UpArrow.get_height(),
+                    *DownArrow.get_size()
+                )
+            ScrollSurf = pygame.surface.Surface((UpArrow.get_width(),UpArrow.get_height()+DownArrow.get_height()))
+            ScrollSurf.fill((100,100,0,100))#
+            ScrollSurf.blit(UpArrow,(0,0))
+            ScrollSurf.blit(DownArrow,(0,UpArrow.get_height()))
         self.UiSurf = pygame.surface.Surface((1000,600))
         clock = pygame.time.Clock()
-        EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
+        # EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
         
         while(self._run):
             self.UiSurf.fill((100,150,100))
@@ -167,8 +181,10 @@ class Ui:
             
             self.UiSurf.blit(self.getEventSurf(),(0,self._visMapSurf.get_size()[1]))
             
-            for i in range(len(self._vehicles)):
-                self.UiSurf.blit(self.carInfo(self._vehicles[i],i),(self._visMapSurf.get_size()[0],100*i))
+            carInfoSurfs = self.getCarSurfs()
+            carInfoSurfs = carInfoSurfs[self._carInfoOffset:]
+            for i, carInfoSurf in enumerate(carInfoSurfs):
+                self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_size()[0],100*i))
             self.UiSurf.blit(self.carOnMap(),(0,0))
             if self.showUi:
                 for event in pygame.event.get():
@@ -177,15 +193,22 @@ class Ui:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         if BtnRect.collidepoint(pygame.mouse.get_pos()):
                             self.startControler()
+                        if UpRect.collidepoint(pygame.mouse.get_pos()):
+                            self._carInfoOffset = min(max(self._carInfoOffset+1,0),len(self._vehicles)-1)
+                        if DownRect.collidepoint(pygame.mouse.get_pos()):
+                            self._carInfoOffset = min(max(self._carInfoOffset-1,0),len(self._vehicles)-1)
+                    if event.type == pygame.MOUSEWHEEL:
+                        self._carInfoOffset = min(max(self._carInfoOffset+ event.y,0),len(self._vehicles)-1)
                 Ui.blit(self.UiSurf,(0,0))
                 Ui.blit(Button,(0,0))
+                Ui.blit(ScrollSurf,(self._visMapSurf.get_width()-ScrollSurf.get_width(),0))
                 pygame.display.update()
             clock.tick(self.fps)
     
     def addVehicle(self, Vehicle:anki.Vehicle):
         self._vehicles.append(Vehicle)
     
-    def startControler(self):
+    def startControler(self): #modify starting condition
         if self._controlThread == None or self._controlThread.is_alive() == False: 
             self._controlThread = threading.Thread(target=vehicleControler,args=[self._vehicles,self._eventLoop,self._customLanes] ,daemon=True)
             self._controlThread.start()
