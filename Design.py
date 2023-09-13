@@ -5,3 +5,5 @@ CarPosText = (150,0,150)
 ButtonFill = (180,180,180,100)
 EventFill = (100,150,150)
 CarInfoFill = (200,100,200)
+ConsoleHeight = 200
+ShowGrid = False

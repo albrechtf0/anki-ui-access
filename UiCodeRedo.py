@@ -21,44 +21,51 @@ def relative_to_file(relpath: str) -> str:
     pass
 
 class Ui:    
-    def __init__(self, vehicles: list[anki.Vehicle], map,orientation :tuple[int,int],flipMap: bool =False,showUi:bool = True,showControler:bool = False, fps: int = 60,customLanes:list[_Lane]=[]) -> None:
+    def __init__(self, vehicles: list[anki.Vehicle], 
+                 map,orientation :tuple[int,int],flipMap: bool =False,
+                 showUi:bool = True,showControler:bool = False, fps: int = 60,
+                 customLanes:list[_Lane]=[]) -> None:
+        #Loading vehicles and Lanes
         self._vehicles = vehicles
+        self._customLanes = customLanes
+        #setting up map
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
         if flipMap:
             self._visMap, self._lookup = flip_h(self._visMap,self._lookup)
+            #loading aditional information
         self.showUi = showUi
         self.fps = fps
-        self.UiSurf = None
-        self._vehicleControler:vehicleControler = None
+        self._carInfoOffset = 0
+        
+        #starting pygame
         pygame.init()
         self._font = pygame.font.SysFont("Arial",20)
-        
+        #generating event list
         self._eventList: list[pygame.Surface] = []
+        #Ui surfaces
+        self.UiSurf: pygame.Surface = None
         self._visMapSurf: pygame.Surface = None
-        self._run = True
+        #starting ui
         self._thread =  threading.Thread(target=self._UiThread,daemon=True)
+        self._run = True
         self._thread.start()
+        #getting eventloop and starting ControlWindow
         self._eventLoop = asyncio.get_running_loop()
         self._controlThread = None
-        self._customLanes = customLanes
-        self._carInfoOffset = 0
         if showControler:
             self.startControler()
-    
-    def kill(self):
-        self._run = False
-    
-    def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int],addition:int=0):
+    #generating vismap
+    def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int],addition:int=0) -> pygame.Surface:
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
-    def genGrid(self,visMap,mapsurf):
+    def genGrid(self,visMap,mapsurf)-> pygame.Surface:
         for x in range(len(visMap)):
             pygame.draw.line(mapsurf,Design.Lines,(x*100,0),(x*100,len(visMap[x])*100))
         for y in range(len(visMap[x])):
             pygame.draw.line(mapsurf,Design.Lines,(0,y*100),(len(visMap)*100,y*100))
         pygame.draw.rect(mapsurf,Design.Lines,(0,0,len(visMap)*100, len(visMap[0])*100),1)
         return mapsurf
-    def gen_MapSurface(self, visMap: Vismap):
+    def gen_MapSurface(self, visMap: Vismap) -> pygame.Surface:
         Gerade = pygame.image.load(relative_to_file("Gerade.png"))
         Kurve = pygame.image.load(relative_to_file("Kurve.png"))
         Kreuzung = pygame.image.load(relative_to_file("Kreuzung.png"))
@@ -90,9 +97,11 @@ class Ui:
                             # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
                         case TrackPieceTypes.FINISH:
                             pass
-        self._visMapSurf = self.genGrid(visMap,mapSurf)
-    
-    def carInfo(self, fahrzeug: anki.Vehicle, number:int):
+        self._visMapSurf = mapSurf
+        if Design.ShowGrid:
+            self._visMapSurf = self.genGrid(visMap,mapSurf)
+    #infos for cars 
+    def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
         surf = pygame.surface.Surface((500,100))
         surf.fill(Design.CarInfoFill)
         try:
@@ -104,8 +113,7 @@ class Ui:
         except Exception as e:
             surf.blit(self._font.render(f"Invalid information:\n{e}",True,Design.Text),(10,10))
         return surf
-    
-    def carOnMap(self):
+    def carOnMap(self) ->pygame.Surface:
         maping = []
         for x in range(len(self._visMap)):
             maping.append([])
@@ -124,7 +132,9 @@ class Ui:
         return surf
     
     #methods for user interaction
-    def addEvent(self, text:str, color:tuple[int,int,int]):
+    def kill(self):
+        self._run = False
+    def addEvent(self, text:str, color:tuple[int,int,int] = Design.Text):
         self._eventList.insert(0,self._font.render(text,True,color))
         if(len(self._eventList) > 5):
             self._eventList.pop(len(self._eventList)-1)
@@ -149,7 +159,6 @@ class Ui:
         self.addEvent("Started Ui",Design.Text)
         self.gen_MapSurface(self._visMap)
         if self.showUi:
-            Ui = pygame.display.set_mode((1000,600),pygame.SCALED)
             Logo = pygame.image.load(relative_to_file("Logo.png"))
             pygame.display.set_icon(Logo)
             pygame.display.set_caption(relative_to_file("Anki Ui Access"))
@@ -172,9 +181,10 @@ class Ui:
             ScrollSurf.fill(Design.ButtonFill)
             ScrollSurf.blit(UpArrow,(0,0))
             ScrollSurf.blit(DownArrow,(0,UpArrow.get_height()))
-        self.UiSurf = pygame.surface.Surface((1000,600))
+        self.UiSurf = pygame.surface.Surface((self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
+                                              self._visMapSurf.get_height() + Design.ConsoleHeight))
+        Ui = pygame.display.set_mode(self.UiSurf.get_size(),pygame.SCALED)
         clock = pygame.time.Clock()
-        # EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
         
         while(self._run):
             self.UiSurf.fill(Design.Background)
@@ -203,6 +213,7 @@ class Ui:
                 Ui.blit(self.UiSurf,(0,0))
                 Ui.blit(Button,(0,0))
                 Ui.blit(ScrollSurf,(self._visMapSurf.get_width()-ScrollSurf.get_width(),0))
+                
                 pygame.display.update()
             clock.tick(self.fps)
     
