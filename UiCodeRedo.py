@@ -178,13 +178,17 @@ class Ui:
                     UpArrow.get_height(),
                     *DownArrow.get_size()
                 )
-            ScrollSurf = pygame.surface.Surface((UpArrow.get_width(),UpArrow.get_height()+DownArrow.get_height()))
+            ScrollSurf = pygame.surface.Surface(
+                (UpArrow.get_width(),UpArrow.get_height()+DownArrow.get_height()))
             ScrollSurf.fill(Design.ButtonFill)
             ScrollSurf.blit(UpArrow,(0,0))
             ScrollSurf.blit(DownArrow,(0,UpArrow.get_height()))
-        self.UiSurf = pygame.surface.Surface((self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-                                              self._visMapSurf.get_height() + Design.ConsoleHeight))
-        Ui = pygame.display.set_mode(self.UiSurf.get_size(),pygame.SCALED)
+            Ui = pygame.display.set_mode(
+                (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
+                    self._visMapSurf.get_height() + Design.ConsoleHeight),pygame.SCALED)
+        self.UiSurf = pygame.surface.Surface(
+            (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
+                self._visMapSurf.get_height() + Design.ConsoleHeight))
         clock = pygame.time.Clock()
         
         while(self._run):
