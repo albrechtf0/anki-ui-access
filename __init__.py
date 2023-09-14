@@ -1,1 +1,1 @@
-from .UiCodeRedo import Ui
+from .UiMain import Ui

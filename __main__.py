@@ -2,9 +2,9 @@ import anki
 from anki.utility.lanes import _Lane
 import asyncio
 try:
-    from .UiCodeRedo import Ui
+    from .UiMain import Ui
 except ImportError:
-    from UiCodeRedo import Ui
+    from UiMain import Ui
     import pygame
 
 

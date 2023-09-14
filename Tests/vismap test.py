@@ -27,6 +27,6 @@ for row in zip(*vismap):
             for cell in row
         ]
     )
-from UiCodeRedo import Ui
+from UiMain import Ui
 
 Ui([],map,(1,0)).waitForFinish()
