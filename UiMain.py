@@ -24,7 +24,7 @@ class Ui:
     def __init__(self, vehicles: list[anki.Vehicle], 
                  map,orientation :tuple[int,int],flipMap: bool =False,
                  showUi:bool = True,showControler:bool = False, fps: int = 60,
-                 customLanes:list[_Lane]=[]) -> None:
+                 customLanes:list[_Lane]=[], Design = Design.Design()) -> None:
         #Loading vehicles and Lanes
         self._vehicles = vehicles
         self._customLanes = customLanes
@@ -37,6 +37,7 @@ class Ui:
         self.showUi = showUi
         self.fps = fps
         self._carInfoOffset = 0
+        self._Design = Design
         
         #starting pygame
         pygame.init()
@@ -60,10 +61,11 @@ class Ui:
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
         for x in range(len(visMap)):
-            pygame.draw.line(mapsurf,Design.Lines,(x*100,0),(x*100,len(visMap[x])*100))
+            pygame.draw.line(mapsurf,self._Design.Line,(x*100,0),(x*100,len(visMap[x])*100),self._Design.LineWidth)
         for y in range(len(visMap[x])):
-            pygame.draw.line(mapsurf,Design.Lines,(0,y*100),(len(visMap)*100,y*100))
-        pygame.draw.rect(mapsurf,Design.Lines,(0,0,len(visMap)*100, len(visMap[0])*100),1)
+            pygame.draw.line(mapsurf,self._Design.Line,(0,y*100),(len(visMap)*100,y*100),self._Design.LineWidth)
+        if self._Design.ShowOutlines:
+            pygame.draw.rect(mapsurf,self._Design.Line,(0,0,len(visMap)*100, len(visMap[0])*100),self._Design.LineWidth)
         return mapsurf
     def gen_MapSurface(self, visMap: Vismap) -> pygame.Surface:
         Gerade = pygame.image.load(relative_to_file("Gerade.png"))
@@ -98,21 +100,22 @@ class Ui:
                         case TrackPieceTypes.FINISH:
                             pass
         self._visMapSurf = mapSurf
-        if Design.ShowGrid:
+        if self._Design.ShowGrid:
             self._visMapSurf = self.genGrid(visMap,mapSurf)
     #infos for cars 
     def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
         surf = pygame.surface.Surface((500,100))
-        surf.fill(Design.CarInfoFill)
+        surf.fill(self._Design.CarInfoFill)
         try:
-            surf.blit(self._font.render(f"Vehicle ID: {fahrzeug.id}",True,Design.Text),(10,10))
-            surf.blit(self._font.render(f"Number: {number}",True,Design.Text),(400,10))
-            surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,Design.Text),(10,30))
-            surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,Design.Text),(10,50))
-            surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,Design.Text),(10,70))
+            surf.blit(self._font.render(f"Vehicle ID: {fahrzeug.id}",True,self._Design.Text),(10,10))
+            surf.blit(self._font.render(f"Number: {number}",True,self._Design.Text),(400,10))
+            surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,self._Design.Text),(10,30))
+            surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,self._Design.Text),(10,50))
+            surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,self._Design.Text),(10,70))
         except Exception as e:
-            surf.blit(self._font.render(f"Invalid information:\n{e}",True,Design.Text),(10,10))
-        pygame.draw.rect(surf,Design.Lines,(0,0,500,100),1)
+            surf.blit(self._font.render(f"Invalid information:\n{e}",True,self._Design.Text),(10,10))
+        if self._Design.ShowOutlines:
+            pygame.draw.rect(surf,self._Design.Line,(0,0,500,100),self._Design.LineWidth)
         return surf
     def carOnMap(self) ->pygame.Surface:
         maping = []
@@ -128,15 +131,15 @@ class Ui:
             for y in range(len(maping[x])):
                 if (maping[x][y] != []):
                     for i in range(len(maping[x][y])):
-                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,Design.CarPosText),(x*100+100-10*(i+1),y*100+80))
+                        surf.blit(self._font.render(f"{maping[x][y][i]}",True,self._Design.CarPosText),(x*100+100-10*(i+1),y*100+80))
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     
     #methods for user interaction
     def kill(self):
         self._run = False
-    def addEvent(self, text:str, color:tuple[int,int,int] = Design.Text):
-        self._eventList.insert(0,self._font.render(text,True,color))
+    def addEvent(self, text:str, color:tuple[int,int,int] = None):
+        self._eventList.insert(0,self._font.render(text,True,color if color != None else (0,0,0) ))
         if(len(self._eventList) > 5):
             self._eventList.pop(len(self._eventList)-1)
     def getUiSurf(self) -> pygame.Surface: 
@@ -149,28 +152,30 @@ class Ui:
         return self.carOnMap()
     def getEventSurf(self) -> pygame.surface:
         EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],200))
-        EventSurf.fill(Design.EventFill)
+        EventSurf.fill(self._Design.EventFill)
         for i in range(len(self._eventList)):
             EventSurf.blit(self._eventList[i],(10,i*20))
-        pygame.draw.rect(EventSurf,Design.Lines,(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),1)
+        if self._Design.ShowOutlines:
+            pygame.draw.rect(EventSurf,self._Design.Line,(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),self._Design.LineWidth)
         return EventSurf
     
     #The Code that showes the Ui
     def _UiThread(self):
-        self.addEvent("Started Ui",Design.Text)
+        self.addEvent("Started Ui",self._Design.Text)
         self.gen_MapSurface(self._visMap)
         if self.showUi:
             Logo = pygame.image.load(relative_to_file("Logo.png"))
             pygame.display.set_icon(Logo)
             pygame.display.set_caption(relative_to_file("Anki Ui Access"))
-            BtnText = self._font.render("Controler",True,Design.Text)
+            BtnText = self._font.render("Controler",True,self._Design.Text)
             Button = pygame.surface.Surface(BtnText.get_size(),pygame.SRCALPHA)
-            Button.fill(Design.ButtonFill)
+            Button.fill(self._Design.ButtonFill)
             BtnRect = pygame.rect.Rect((0,0,*BtnText.get_size()))
-            pygame.draw.rect(Button,Design.Lines,BtnRect,1)
+            if self._Design.ShowOutlines:
+                pygame.draw.rect(Button,self._Design.Line,BtnRect,self._Design.LineWidth)
             Button.blit(BtnText,(0,0)) 
-            UpArrow = self._font.render("▲",True,Design.Text)
-            DownArrow = self._font.render("▼", True,Design.Text)
+            UpArrow = self._font.render("▲",True,self._Design.Text)
+            DownArrow = self._font.render("▼", True,self._Design.Text)
             UpRect = pygame.rect.Rect(
                 (self._visMapSurf.get_width()-UpArrow.get_width(),0,*UpArrow.get_size()))
             DownRect = pygame.rect.Rect(
@@ -180,19 +185,19 @@ class Ui:
                 )
             ScrollSurf = pygame.surface.Surface(
                 (UpArrow.get_width(),UpArrow.get_height()+DownArrow.get_height()))
-            ScrollSurf.fill(Design.ButtonFill)
+            ScrollSurf.fill(self._Design.ButtonFill)
             ScrollSurf.blit(UpArrow,(0,0))
             ScrollSurf.blit(DownArrow,(0,UpArrow.get_height()))
             Ui = pygame.display.set_mode(
                 (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-                    self._visMapSurf.get_height() + Design.ConsoleHeight),pygame.SCALED)
+                    self._visMapSurf.get_height() + self._Design.ConsoleHeight),pygame.SCALED)
         self.UiSurf = pygame.surface.Surface(
             (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-                self._visMapSurf.get_height() + Design.ConsoleHeight))
+                self._visMapSurf.get_height() + self._Design.ConsoleHeight))
         clock = pygame.time.Clock()
         
         while(self._run):
-            self.UiSurf.fill(Design.Background)
+            self.UiSurf.fill(self._Design.Background)
             self.UiSurf.blit(self._visMapSurf,(0,0))
             
             self.UiSurf.blit(self.getEventSurf(),(0,self._visMapSurf.get_size()[1]))
