@@ -112,6 +112,7 @@ class Ui:
             surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,Design.Text),(10,70))
         except Exception as e:
             surf.blit(self._font.render(f"Invalid information:\n{e}",True,Design.Text),(10,10))
+        pygame.draw.rect(surf,Design.Lines,(0,0,500,100),1)
         return surf
     def carOnMap(self) ->pygame.Surface:
         maping = []
