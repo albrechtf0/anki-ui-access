@@ -63,12 +63,10 @@ class Ui:
     def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int],addition:int=0) -> pygame.Surface:
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
-        for x in range(len(visMap)):
+        for x in range(1,len(visMap)):
             pygame.draw.line(mapsurf,self._Design.Line,(x*100,0),(x*100,len(visMap[x])*100),self._Design.LineWidth)
-        for y in range(len(visMap[x])):
+        for y in range(1,len(visMap[x])):
             pygame.draw.line(mapsurf,self._Design.Line,(0,y*100),(len(visMap)*100,y*100),self._Design.LineWidth)
-        if self._Design.ShowOutlines:
-            pygame.draw.rect(mapsurf,self._Design.Line,(0,0,len(visMap)*100, len(visMap[0])*100),self._Design.LineWidth)
         return mapsurf
     def gen_MapSurface(self, visMap: Vismap):
         Gerade = pygame.image.load(relative_to_file("Gerade.png"))
@@ -105,6 +103,8 @@ class Ui:
         self._visMapSurf = mapSurf
         if self._Design.ShowGrid:
             self._visMapSurf = self.genGrid(visMap,mapSurf)
+        if self._Design.ShowOutlines:
+            pygame.draw.rect(self._visMapSurf,self._Design.Line,(0,0,len(visMap)*100, len(visMap[0])*100),self._Design.LineWidth)
     #infos for cars 
     def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
         surf = pygame.surface.Surface((500,100))
