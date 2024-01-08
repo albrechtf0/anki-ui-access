@@ -1,9 +1,9 @@
 from warnings import warn
-from anki import TrackPiece, TrackPieceTypes
+from anki import TrackPiece, TrackPieceType
 from dataclasses import dataclass
 from typing import Literal
 
-__all__ = ("generate")
+__all__ = ("generate",)
 
 
 Vismap = list[list[list["Element"]]]
@@ -24,12 +24,12 @@ class Element:
         return repr(self)
     pass
 
-_ORIENTATIONS=((1,0),(0,-1),(-1,0),(0,1))
-def _next_orientation(orientation: tuple[int,int], is_clockwise: bool) -> tuple[int,int]:
+_ORIENTATIONS: tuple[Orientation,...]=((1,0),(0,-1),(-1,0),(0,1))
+def _next_orientation(orientation: Orientation, is_clockwise: bool) -> Orientation:
     new_index = _ORIENTATIONS.index(orientation) + (1 if not is_clockwise else -1)
     return _ORIENTATIONS[new_index%len(_ORIENTATIONS)]
 
-def _invert_orientation(o: tuple[int,int]) -> tuple[int,int]:
+def _invert_orientation(o: Orientation) -> Orientation:
     # Inverts the orientation. 
     # This just changes the sign of the components
     return (-o[0],-o[1])
@@ -73,7 +73,7 @@ def _expand_down(vismap: Vismap):
         pass
     pass
 
-_CURVE_ROTATIONS_LOOKUP = {
+_CURVE_ROTATIONS_LOOKUP: dict[tuple[Orientation, Orientation],int] = {
     ((1,0),(0,-1)) : 0,
     ((-1,0),(0,-1)) : 90,
     ((-1,0),(0,1)) : 180,
@@ -86,10 +86,10 @@ piece orientation. The previous piece orientation has to be inverted.
 
 def orientation_to_rotation(
     type,
-    orientation: tuple[int,int], 
-    previous_orientation: tuple[int,int]
+    orientation: Orientation, 
+    previous_orientation: Orientation
 ) -> tuple[int,bool]:
-    if type == TrackPieceTypes.CURVE:
+    if type == TrackPieceType.CURVE:
         flipped = False
         try:
             rotation = _CURVE_ROTATIONS_LOOKUP[
@@ -105,13 +105,15 @@ def orientation_to_rotation(
         return rotation, flipped
         pass
     elif type in (
-        TrackPieceTypes.STRAIGHT,
-        TrackPieceTypes.START,
-        TrackPieceTypes.FINISH
+        TrackPieceType.STRAIGHT,
+        TrackPieceType.START,
+        TrackPieceType.FINISH
     ):
         return _ORIENTATIONS.index(orientation)*90, False
-    elif type == TrackPieceTypes.INTERSECTION:
+    elif type == TrackPieceType.INTERSECTION:
         return 0, False
+    else:
+        raise RuntimeError
     pass
 
 def generate(
@@ -153,7 +155,7 @@ def generate(
             pass
         
         # Set new orientation
-        if piece.type == TrackPieceTypes.CURVE:
+        if piece.type == TrackPieceType.CURVE:
             orientation = _next_orientation(orientation, piece.clockwise)
             pass
         
@@ -161,10 +163,10 @@ def generate(
         # This is done so that the vismap doesn't always have two intersections for every intersection that exists
         working_cell = vismap[head[0]][head[1]]
         position_tracker.append((head[0],head[1],len(working_cell)))
-        if not(piece.type == TrackPieceTypes.INTERSECTION 
+        if not(piece.type == TrackPieceType.INTERSECTION 
         and len(working_cell) > 0
         and all([
-            check.piece.type == TrackPieceTypes.INTERSECTION 
+            check.piece.type == TrackPieceType.INTERSECTION 
             for check in working_cell
         ])):
             working_cell.append(Element(
@@ -200,7 +202,7 @@ def flip_h(
                 Element(
                     e.piece,
                     (-e.orientation[0],e.orientation[1]),
-                    h_rotation_flip(e.rotation)
+                    h_rotation_flip(e.rotation) # type: ignore
                 )
                 for e in position
             ]
