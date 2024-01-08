@@ -3,10 +3,11 @@ import math
 import Design
 
 import anki, asyncio, pygame
-from anki import TrackPieceTypes
+from anki import TrackPieceType
 import threading
 from VehicleControlWindow import vehicleControler
-from anki.utility.lanes import _Lane
+from anki.misc.lanes import BaseLane
+from enum import Enum
 
 try:
     from .VisMapGenerator import generate, flip_h, Vismap
@@ -24,10 +25,11 @@ class Ui:
     def __init__(self, vehicles: list[anki.Vehicle], 
                  map,orientation :tuple[int,int],flipMap: bool =False,
                  showUi:bool = True,showControler:bool = False, fps: int = 60,
-                 customLanes:list[_Lane]=[], Design = Design.Design()) -> None:
+                 customLanes:list[BaseLane]=[], Design = Design.Design()) -> None:
         #Loading vehicles and Lanes
         self._vehicles = vehicles
-        self._customLanes = customLanes
+        self._customLanes = customLanes + anki.Lane3.getAll() + anki.Lane4.getAll()
+        self._laneSystem = BaseLane("CustomLanes",{lane.name:lane.value for lane in self._customLanes})
         #setting up map
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
@@ -60,12 +62,12 @@ class Ui:
         if showControler:
             self.startControler()
     #generating vismap
-    def rotateSurf(self, surf: pygame.surface, orientation: tuple[int,int],addition:int=0) -> pygame.Surface:
+    def rotateSurf(self, surf: pygame.Surface, orientation: tuple[int,int],addition:int=0) -> pygame.Surface:
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
         for x in range(1,len(visMap)):
             pygame.draw.line(mapsurf,self._Design.Line,(x*100,0),(x*100,len(visMap[x])*100),self._Design.LineWidth)
-        for y in range(1,len(visMap[x])):
+        for y in range(1,len(visMap[0])):
             pygame.draw.line(mapsurf,self._Design.Line,(0,y*100),(len(visMap)*100,y*100),self._Design.LineWidth)
         return mapsurf
     def gen_MapSurface(self, visMap: Vismap):
@@ -79,26 +81,26 @@ class Ui:
                 for i in range(len(visMap[x][y])):
                     current = visMap[x][y][i]
                     match current.piece.type:
-                        case TrackPieceTypes.STRAIGHT:
-                            Gerade.set_alpha((1.5**-i)*255)
+                        case TrackPieceType.STRAIGHT:
+                            Gerade.set_alpha(int((1.5**-i)*255))
                             mapSurf.blit( self.rotateSurf(Gerade,current.orientation,90),(x*100,y*100))
                             # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
-                        case TrackPieceTypes.CURVE:
-                            Kurve.set_alpha((1.5**-i)*255)
-                            mapSurf.blit(pygame.transform.rotate(Kurve,current.rotation),(x*100,y*100))
+                        case TrackPieceType.CURVE:
+                            Kurve.set_alpha(int((1.5**-i)*255))
+                            mapSurf.blit(pygame.transform.rotate(Kurve,float(current.rotation)),(x*100,y*100)) # type: ignore
                             #mapSurf.blit(self._font.render(
                             #    f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
                             #    True,
                             #    (100,100,100)
                             #),(x*100,y*100))
-                        case TrackPieceTypes.INTERSECTION:
-                            Kreuzung.set_alpha((1.5**-i)*255)
+                        case TrackPieceType.INTERSECTION:
+                            Kreuzung.set_alpha(int((1.5**-i)*255))
                             mapSurf.blit(Kreuzung, (x*100,y*100))
-                        case TrackPieceTypes.START:
-                            Start.set_alpha((1.5**-i)*255)
+                        case TrackPieceType.START:
+                            Start.set_alpha(int((1.5**-i)*255))
                             mapSurf.blit(self.rotateSurf(Start,current.orientation,90),(x*100,y*100))
                             # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
-                        case TrackPieceTypes.FINISH:
+                        case TrackPieceType.FINISH:
                             pass
         self._visMapSurf = mapSurf
         if self._Design.ShowGrid:
@@ -113,9 +115,10 @@ class Ui:
             surf.blit(self._font.render(f"Vehicle ID: {fahrzeug.id}",True,self._Design.Text),(10,10))
             surf.blit(self._font.render(f"Number: {number}",True,self._Design.Text),(400,10))
             surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,self._Design.Text),(10,30))
-            surf.blit(self._font.render(f"Lane: {fahrzeug.getLane(anki.Lane4)}",True,self._Design.Text),(10,50))
+            surf.blit(self._font.render(f"Lane: {fahrzeug.get_lane(self._laneSystem)}",True,self._Design.Text),(10,50))
             surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,self._Design.Text),(10,70))
         except Exception as e:
+            surf.fill(self._Design.CarInfoFill)
             surf.blit(self._font.render(f"Invalid information:\n{e}",True,self._Design.Text),(10,10))
         if self._Design.ShowOutlines:
             pygame.draw.rect(surf,self._Design.Line,(0,0,500,100),self._Design.LineWidth)
@@ -128,7 +131,7 @@ class Ui:
                 maping[x].append([])
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
         for i in range(len(self._vehicles)):
-            x, y, _ = self._lookup[self._vehicles[i].map_position]
+            x, y, _ = self._lookup[self._vehicles[i].map_position] # type: ignore
             maping[x][y].append(i)
         for x in range(len(maping)):
             for y in range(len(maping[x])):
@@ -138,7 +141,7 @@ class Ui:
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     def gen_Buttons(self):
-        BtnText = self._font.render("Controler",True,self._Design.Text)
+        BtnText = self._font.render("Controller",True,self._Design.Text)
         Button = pygame.surface.Surface(BtnText.get_size(),pygame.SRCALPHA)
         Button.fill(self._Design.ButtonFill)
         BtnRect = pygame.rect.Rect((0,0,*BtnText.get_size()))
@@ -174,11 +177,11 @@ class Ui:
         return self.UiSurf
     def getCarSurfs(self) -> list[pygame.Surface]:
         return [self.carInfo(self._vehicles[i],i) for i in range(len(self._vehicles)) ]
-    def getMapsurf(self) -> pygame.surface:
+    def getMapsurf(self) -> pygame.Surface:
         return self._visMapSurf
-    def getCarsOnMap(self) -> pygame.surface:
+    def getCarsOnMap(self) -> pygame.Surface:
         return self.carOnMap()
-    def getEventSurf(self) -> pygame.surface:
+    def getEventSurf(self) -> pygame.Surface:
         EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],self._Design.ConsoleHeight))
         EventSurf.fill(self._Design.EventFill)
         for i in range(len(self._eventList)):
@@ -237,11 +240,11 @@ class Ui:
                             self._carInfoOffset = min(max(self._carInfoOffset-1,0),len(self._vehicles)-1)
                     if event.type == pygame.MOUSEWHEEL:
                         self._carInfoOffset = min(max(self._carInfoOffset+ event.y,0),len(self._vehicles)-1)
-                if(Ui.get_size() != self.UiSurf.get_size()):
+                if(Ui.get_size() != self.UiSurf.get_size()):# type: ignore
                     Ui = pygame.display.set_mode(self.UiSurf.get_size(),pygame.SCALED)
-                Ui.blit(self.UiSurf,(0,0))
-                Ui.blit(self._ControlButtonSurf,(0,0))
-                Ui.blit(self._ScrollSurf,(self._visMapSurf.get_width()-self._ScrollSurf.get_width(),0))
+                Ui.blit(self.UiSurf,(0,0))# type: ignore
+                Ui.blit(self._ControlButtonSurf,(0,0))# type: ignore
+                Ui.blit(self._ScrollSurf,(self._visMapSurf.get_width()-self._ScrollSurf.get_width(),0))# type: ignore
                 
                 pygame.display.update()
             clock.tick(self.fps)
