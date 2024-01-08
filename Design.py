@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class Design:
     Background:tuple[int,int,int] = (100,150,100) 
     Line:tuple[int,int,int] = (0,0,0)
-    LineWidth:int = 1
+    LineWidth:int = 1 #do not set smaller than 1
     Text:tuple[int,int,int] = (0,0,0)
     CarPosText:tuple[int,int,int] = (150,0,150)
     ButtonFill:tuple[int,int,int,int] = (180,180,180,100)
