@@ -61,6 +61,8 @@ class Ui:
         self._controlThread = None
         if showControler:
             self.startControler()
+        
+        self._carIMG = pygame.image.load(relative_to_file("Fahrzeug.png"))
     #generating vismap
     def rotateSurf(self, surf: pygame.Surface, orientation: tuple[int,int],addition:int=0) -> pygame.Surface:
         return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
@@ -129,6 +131,7 @@ class Ui:
             maping.append([])
             for y in range(len(self._visMap[x])):
                 maping[x].append([])
+        
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
         for i in range(len(self._vehicles)):
             x, y, _ = self._lookup[self._vehicles[i].map_position] # type: ignore
@@ -140,6 +143,14 @@ class Ui:
                         surf.blit(self._font.render(f"{maping[x][y][i]}",True,self._Design.CarPosText),(x*100+100-10*(i+1),y*100+80))
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
+    def carOnStreet(self) -> pygame.Surface:
+        surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
+        for car in self._vehicles:
+            x, y, i = self._lookup[car.map_position]
+            
+            surf.blit(self.rotateSurf(self._carIMG,self._visMap[x][y][i].orientation,-90),(x*100+50,y*100+50))
+        return surf
+    
     def gen_Buttons(self):
         BtnText = self._font.render("Controller",True,self._Design.Text)
         Button = pygame.surface.Surface(BtnText.get_size(),pygame.SRCALPHA)
@@ -227,6 +238,7 @@ class Ui:
             for i, carInfoSurf in enumerate(carInfoSurfs):
                 self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_size()[0],100*i))
             self.UiSurf.blit(self.carOnMap(),(0,0))
+            self.UiSurf.blit(self.carOnStreet(),(0,0))
             if self.showUi:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
