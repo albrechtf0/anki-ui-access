@@ -147,8 +147,17 @@ class Ui:
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
         for car in self._vehicles:
             x, y, i = self._lookup[car.map_position]
-            
-            surf.blit(self.rotateSurf(self._carIMG,self._visMap[x][y][i].orientation,-90),(x*100+50,y*100+50))
+            offset = (car.road_offset / 50)*15
+            orientation = self._visMap[x][y][i].orientation
+            print(offset, orientation)
+            if car.current_track_piece.type is not TrackPieceType.CURVE:
+                surf.blit(
+                    self.rotateSurf(self._carIMG,orientation,-90),
+                    (x*100+40+offset*orientation[1],y*100+40+offset*orientation[0]))
+            else:
+                surf.blit(
+                    pygame.transform.rotate(self._carIMG,float(self._visMap[x][y][i].rotation-135)),
+                    (x*100+40+offset*orientation[1],y*100+40+offset*orientation[0]))
         return surf
     
     def gen_Buttons(self):
