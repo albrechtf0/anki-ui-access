@@ -10,7 +10,7 @@ from anki.misc.lanes import BaseLane
 from enum import Enum
 
 try:
-    from .VisMapGenerator import generate, flip_h, Vismap
+    from .VisMapGenerator import generate, flip_h, Vismap, Element
 except ImportError:
     from VisMapGenerator import generate, flip_h, Vismap
 
@@ -65,7 +65,7 @@ class Ui:
         self._carIMG = pygame.image.load(relative_to_file("Fahrzeug.png"))
     #generating vismap
     def rotateSurf(self, surf: pygame.Surface, orientation: tuple[int,int],addition:int=0) -> pygame.Surface:
-        return pygame.transform.rotate(surf,math.degrees(math.atan2(orientation[1],orientation[0]))+addition)
+        return pygame.transform.rotate(surf,math.degrees(math.atan2(-orientation[1],orientation[0]))+addition)
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
         for x in range(1,len(visMap)):
             pygame.draw.line(mapsurf,self._Design.Line,(x*100,0),(x*100,len(visMap[x])*100),self._Design.LineWidth)
@@ -96,8 +96,9 @@ class Ui:
                             #    (100,100,100)
                             #),(x*100,y*100))
                         case TrackPieceType.INTERSECTION:
-                            Kreuzung.set_alpha(int((1.5**-i)*255))
-                            mapSurf.blit(Kreuzung, (x*100,y*100))
+                            if current.orientation[0] != 0:
+                                Kreuzung.set_alpha(int((1.5**-i)*255))
+                                mapSurf.blit(Kreuzung, (x*100,y*100))
                         case TrackPieceType.START:
                             Start.set_alpha(int((1.5**-i)*255))
                             mapSurf.blit(self.rotateSurf(Start,current.orientation,90),(x*100,y*100))
@@ -119,6 +120,7 @@ class Ui:
             surf.blit(self._font.render(f"Position: {fahrzeug.map_position}",True,self._Design.Text),(10,30))
             surf.blit(self._font.render(f"Lane: {fahrzeug.get_lane(self._laneSystem)}",True,self._Design.Text),(10,50))
             surf.blit(self._font.render(f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",True,self._Design.Text),(10,70))
+            surf.blit(self._font.render(f"Offset: {round(fahrzeug.road_offset,2)}",True,self._Design.Text),(350,30))
         except Exception as e:
             surf.fill(self._Design.CarInfoFill)
             surf.blit(self._font.render(f"Invalid information:\n{e}",True,self._Design.Text),(10,10))
@@ -149,15 +151,19 @@ class Ui:
             x, y, i = self._lookup[car.map_position]
             offset = (car.road_offset / 50)*15
             orientation = self._visMap[x][y][i].orientation
-            print(offset, orientation)
+            #print(offset, orientation)
             if car.current_track_piece.type is not TrackPieceType.CURVE:
                 surf.blit(
                     self.rotateSurf(self._carIMG,orientation,-90),
                     (x*100+40+offset*orientation[1],y*100+40+offset*orientation[0]))
             else:
+                piece: Element = self._visMap[x][y][i]
                 surf.blit(
-                    pygame.transform.rotate(self._carIMG,float(self._visMap[x][y][i].rotation-135)),
-                    (x*100+40+offset*orientation[1],y*100+40+offset*orientation[0]))
+                    pygame.transform.rotate(self._carIMG,float(
+                        piece.rotation -135) + (180 if piece.piece.clockwise else 0)),
+                    (x*100+25 -10,
+                     y*100+25 -10))
+                pygame.draw.circle(surf,(0,0,0),(x*100+25 -10,y*100+25 -10),1)
         return surf
     
     def gen_Buttons(self):
