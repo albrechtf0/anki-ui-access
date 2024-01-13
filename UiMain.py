@@ -146,6 +146,13 @@ class Ui:
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     def carOnStreet(self) -> pygame.Surface:
+        rotationToDirection:dict[int,tuple[int,int]]= {
+            0: (1,-1),
+            90: (-1,-1),
+            180: (-1,1),
+            270: (1,1)
+        }
+        
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
         for car in self._vehicles:
             x, y, i = self._lookup[car.map_position]
@@ -158,12 +165,16 @@ class Ui:
                     (x*100+40+offset*orientation[1],y*100+40+offset*orientation[0]))
             else:
                 piece: Element = self._visMap[x][y][i]
+                print(piece.rotation)
+                img = pygame.transform.rotate(self._carIMG,float(
+                        piece.rotation -135) + (180 if piece.piece.clockwise else 0))
                 surf.blit(
-                    pygame.transform.rotate(self._carIMG,float(
-                        piece.rotation -135) + (180 if piece.piece.clockwise else 0)),
-                    (x*100+25 -10,
-                     y*100+25 -10))
-                pygame.draw.circle(surf,(0,0,0),(x*100+25 -10,y*100+25 -10),1)
+                    img,
+                    (x*100+50-img.get_width()/2 + (offset + 25) * rotationToDirection[piece.rotation][0],
+                     y*100+50-img.get_height()/2 + (offset + 25) * rotationToDirection[piece.rotation][1]))
+                pygame.draw.circle(surf,(0,0,255),
+                                   (x*100+50 + (offset + 25) * rotationToDirection[piece.rotation][0],
+                                    y*100+50 + (offset + 25) * rotationToDirection[piece.rotation][1]),1)
         return surf
     
     def gen_Buttons(self):
