@@ -1,5 +1,6 @@
 import os
 import math
+import warnings
 import Design
 
 import anki, asyncio, pygame
@@ -44,8 +45,8 @@ class Ui:
         #starting pygame
         pygame.init()
         self._font = pygame.font.SysFont("Arial",20)
-        #generating event list
-        self._eventList: list[pygame.Surface] = []
+        # integrated event logging
+        self._eventSurf: pygame.Surface|None = None
         #Ui surfaces
         self.UiSurf: pygame.Surface = None
         self._visMapSurf: pygame.Surface = None
@@ -206,10 +207,22 @@ class Ui:
     #methods for user interaction
     def kill(self):
         self._run = False
-    def addEvent(self, text:str, color:tuple[int,int,int] = None):
-        self._eventList.insert(0,self._font.render(text,True,color if color != None else (0,0,0) ))
-        if(len(self._eventList) > 5):
-            self._eventList.pop(len(self._eventList)-1)
+    def addEvent(self, text:str, color:tuple[int,int,int]|None=None):
+        if self._eventSurf is None:
+            warnings.warn("Ui.addEvent called before Ui was initialized", RuntimeWarning)
+            return
+        event = self._font.render(
+            text,
+            True,
+            color if color != None else (0,0,0)
+        )
+        self._eventSurf.scroll(dy=event.get_height())
+        self._eventSurf.fill(
+            self._Design.EventFill,
+            (0, 0, self._eventSurf.get_width(), event.get_height())
+        )
+        self._eventSurf.blit(event, (10, 0))
+        
     def getUiSurf(self) -> pygame.Surface: 
         return self.UiSurf
     def getCarSurfs(self) -> list[pygame.Surface]:
@@ -219,13 +232,7 @@ class Ui:
     def getCarsOnMap(self) -> pygame.Surface:
         return self.carOnMap()
     def getEventSurf(self) -> pygame.Surface:
-        EventSurf = pygame.surface.Surface((self._visMapSurf.get_size()[0],self._Design.ConsoleHeight))
-        EventSurf.fill(self._Design.EventFill)
-        for i in range(len(self._eventList)):
-            EventSurf.blit(self._eventList[i],(10,i*20))
-        if self._Design.ShowOutlines:
-            pygame.draw.rect(EventSurf,self._Design.Line,(0,0,EventSurf.get_size()[0],EventSurf.get_size()[1]),self._Design.LineWidth)
-        return EventSurf
+        return self._eventSurf
     def updateDesign(self):
         self.gen_MapSurface(self._visMap)
         self.UiSurf = pygame.surface.Surface(
@@ -238,16 +245,25 @@ class Ui:
         self.updateDesign()
     #The Code that showes the Ui
     def _UiThread(self):
-        self.addEvent("Started Ui",self._Design.Text)
         self.gen_MapSurface(self._visMap)
+        self._eventSurf = pygame.Surface((
+            self._visMapSurf.get_width(),
+            self._Design.ConsoleHeight
+        ))
+        self._eventSurf.fill(self._Design.EventFill)
+        self.addEvent("Started Ui",self._Design.Text)
         if self.showUi:
             Logo = pygame.image.load(relative_to_file("Logo.png"))
             pygame.display.set_icon(Logo)
             pygame.display.set_caption(relative_to_file("Anki Ui Access"))
             self._ControlButtonSurf, self._ScrollSurf = self.gen_Buttons()
             Ui = pygame.display.set_mode(
-                (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-                    self._visMapSurf.get_height() + self._Design.ConsoleHeight),pygame.SCALED)
+                (
+                    self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
+                    self._visMapSurf.get_height() + self._Design.ConsoleHeight
+                ),
+            pygame.SCALED
+            )
         self.UiSurf = pygame.surface.Surface(
             (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
                 self._visMapSurf.get_height() + self._Design.ConsoleHeight))
@@ -257,7 +273,14 @@ class Ui:
             self.UiSurf.fill(self._Design.Background)
             self.UiSurf.blit(self._visMapSurf,(0,0))
             
-            self.UiSurf.blit(self.getEventSurf(),(0,self._visMapSurf.get_size()[1]))
+            self.UiSurf.blit(self._eventSurf,(0,self._visMapSurf.get_height()))
+            if self._Design.ShowOutlines:
+                pygame.draw.rect(
+                    self._eventSurf,
+                    self._Design.Line,
+                    ((0,0),self._eventSurf.get_size()),
+                    self._Design.LineWidth
+                )
             
             carInfoSurfs = self.getCarSurfs()
             carInfoSurfs = carInfoSurfs[self._carInfoOffset:]
