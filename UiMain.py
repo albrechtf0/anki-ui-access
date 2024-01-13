@@ -237,6 +237,14 @@ class Ui:
                 self._visMapSurf.get_height() + self._Design.ConsoleHeight))
         if(self.showUi):
             self._ControlButtonSurf, self._ScrollSurf = self.gen_Buttons()
+        
+        old_eventSurf = self._eventSurf
+        # TODO: Fix code duplication with _UiThread
+        self._eventSurf = pygame.Surface((
+            self._visMapSurf.get_width(),
+            self._Design.ConsoleHeight
+        ))
+        self._eventSurf.blit(old_eventSurf, (0, 0))
     def setDesign(self,Design: Design.Design):
         self._Design = Design
         self.updateDesign()
