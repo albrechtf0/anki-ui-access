@@ -214,13 +214,10 @@ class Ui:
         event = self._font.render(
             text,
             True,
-            color if color != None else (0,0,0)
+            color if color != None else (0,0,0),
+            background=self._Design.EventFill
         )
         self._eventSurf.scroll(dy=event.get_height())
-        self._eventSurf.fill(
-            self._Design.EventFill,
-            (0, 0, self._eventSurf.get_width(), event.get_height())
-        )
         self._eventSurf.blit(event, (10, 0))
         
     def getUiSurf(self) -> pygame.Surface: 
