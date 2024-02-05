@@ -1,13 +1,16 @@
 import os
 import math
 import warnings
-import Design
-
-import anki, asyncio, pygame
-from anki import TrackPieceType
 import threading
-from VehicleControlWindow import vehicleControler
+import asyncio
+import pygame 
+
+import anki
+from anki import TrackPieceType
 from anki.misc.lanes import BaseLane
+
+import Design
+from VehicleControlWindow import vehicleControler
 
 try:
     from .VisMapGenerator import generate, flip_h, Vismap, Element
@@ -19,7 +22,6 @@ def relative_to_file(relpath: str) -> str:
         os.path.dirname(os.path.abspath(__file__)),
         relpath
     )
-    pass
 
 def load_image(relpath: str):
     return pygame.image.load(relative_to_file(relpath))
@@ -73,7 +75,8 @@ class Ui:
         if showControler:
             self.startControler()
         
-        self._carIMG = load_image("Fahrzeug.png")
+        self._carIMG = load_image(relative_to_file("Fahrzeug.png"))
+    
     #generating vismap
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
         drawGridLine = lambda start, end: pygame.draw.line(
@@ -128,13 +131,13 @@ class Ui:
             self._visMapSurf = self.genGrid(visMap,mapSurf)
         if self._Design.ShowOutlines:
             pygame.draw.rect(self._visMapSurf,self._Design.Line,(0,0,len(visMap)*100, len(visMap[0])*100),self._Design.LineWidth)
+    
     #infos for cars
     def _blitCarInfoOnSurface(self, surf: pygame.Surface, text: str, dest: tuple[int, int]):
         surf.blit(
             self._font.render(text, True, self._Design.Text),
             dest
         )
-    
     def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
         surf = pygame.surface.Surface((500,100))
         surf.fill(self._Design.CarInfoFill)
@@ -249,6 +252,76 @@ class Ui:
         return (Button,ScrollSurf)
     
     
+    def updateUi(self):
+        self.UiSurf.fill(self._Design.Background)
+        self.UiSurf.blit(self._visMapSurf,(0,0))
+        
+        self.UiSurf.blit(self._eventSurf,(0,self._visMapSurf.get_height()))
+        if self._Design.ShowOutlines:
+            pygame.draw.rect(
+                self._eventSurf,
+                self._Design.Line,
+                self._eventSurf.get_rect(),
+                self._Design.LineWidth
+            )
+        
+        carInfoSurfs = self.getCarSurfs()
+        carInfoSurfs = carInfoSurfs[self._carInfoOffset:]
+        for i, carInfoSurf in enumerate(carInfoSurfs):
+            self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_width(),100*i))
+        self.UiSurf.blit(self.carOnMap(),(0,0))
+        self.UiSurf.blit(self.carOnStreet(),(0,0))
+    
+    #The Code that showeth the Ui (:D)
+    def _UiThread(self):
+        self.gen_MapSurface(self._visMap)
+        self._eventSurf = pygame.Surface((
+            self._visMapSurf.get_width(),
+            self._Design.ConsoleHeight
+        ))
+        self._eventSurf.fill(self._Design.EventFill)
+        self.addEvent("Started Ui",self._Design.Text)
+        uiSize = (
+            self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
+            self._visMapSurf.get_height() + self._Design.ConsoleHeight
+        )
+        if self.showUi:
+            Logo = load_image("Logo.png")
+            pygame.display.set_icon(Logo)
+            pygame.display.set_caption("Anki Ui Access")
+            self._ControlButtonSurf, self._ScrollSurf = self.gen_Buttons()
+            Ui = pygame.display.set_mode(uiSize, pygame.SCALED)
+        self.UiSurf = pygame.surface.Surface(uiSize)
+        
+        clock = pygame.time.Clock()
+        while(self._run and self.showUi):
+            self.updateUi()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self._run = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self._rects[0].collidepoint(pygame.mouse.get_pos()):
+                        self.startControler()
+                    if self._rects[1].collidepoint(pygame.mouse.get_pos()):
+                        self._carInfoOffset = min(max(self._carInfoOffset+1,0),len(self._vehicles)-1)
+                    if self._rects[2].collidepoint(pygame.mouse.get_pos()):
+                        self._carInfoOffset = min(max(self._carInfoOffset-1,0),len(self._vehicles)-1)
+                if event.type == pygame.MOUSEWHEEL:
+                    self._carInfoOffset = min(
+                        max(self._carInfoOffset + event.y, 0),
+                        len(self._vehicles)-1
+                    )
+            if(Ui.get_size() != self.UiSurf.get_size()):# type: ignore
+                Ui = pygame.display.set_mode(self.UiSurf.get_size(),pygame.SCALED)
+            Ui.blit(self.UiSurf,(0,0))# type: ignore
+            Ui.blit(self._ControlButtonSurf,(0,0))# type: ignore
+            Ui.blit(self._ScrollSurf,(self._visMapSurf.get_width()-self._ScrollSurf.get_width(),0))# type: ignore
+            
+            pygame.display.update()
+            clock.tick(self.fps)
+    
+    
+    
     #methods for user interaction
     def kill(self):
         self._run = False
@@ -260,12 +333,12 @@ class Ui:
             text,
             True,
             color if color != None else (0,0,0),
-            background=self._Design.EventFill
+            self._Design.EventFill
         )
         self._eventSurf.scroll(dy=event.get_height())
         self._eventSurf.blit(event, (10, 0))
-        
     def getUiSurf(self) -> pygame.Surface: 
+        self.updateUi()
         return self.UiSurf
     def getCarSurfs(self) -> list[pygame.Surface]:
         return [self.carInfo(self._vehicles[i],i) for i in range(len(self._vehicles)) ]
@@ -293,72 +366,6 @@ class Ui:
     def setDesign(self,Design: Design.Design):
         self._Design = Design
         self.updateDesign()
-    #The Code that showeth the Ui (:D)
-    def _UiThread(self):
-        self.gen_MapSurface(self._visMap)
-        self._eventSurf = pygame.Surface((
-            self._visMapSurf.get_width(),
-            self._Design.ConsoleHeight
-        ))
-        self._eventSurf.fill(self._Design.EventFill)
-        self.addEvent("Started Ui",self._Design.Text)
-        uiSize = (
-            self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-            self._visMapSurf.get_height() + self._Design.ConsoleHeight
-        )
-        if self.showUi:
-            Logo = load_image("Logo.png")
-            pygame.display.set_icon(Logo)
-            # There was a relative_to_file here... What?
-            pygame.display.set_caption("Anki Ui Access")
-            self._ControlButtonSurf, self._ScrollSurf = self.gen_Buttons()
-            Ui = pygame.display.set_mode(uiSize, pygame.SCALED)
-        self.UiSurf = pygame.surface.Surface(uiSize)
-        
-        clock = pygame.time.Clock()
-        while(self._run):
-            self.UiSurf.fill(self._Design.Background)
-            self.UiSurf.blit(self._visMapSurf,(0,0))
-            
-            self.UiSurf.blit(self._eventSurf,(0,self._visMapSurf.get_height()))
-            if self._Design.ShowOutlines:
-                pygame.draw.rect(
-                    self._eventSurf,
-                    self._Design.Line,
-                    self._eventSurf.get_rect(),
-                    self._Design.LineWidth
-                )
-            
-            carInfoSurfs = self.getCarSurfs()
-            carInfoSurfs = carInfoSurfs[self._carInfoOffset:]
-            for i, carInfoSurf in enumerate(carInfoSurfs):
-                self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_width(),100*i))
-            self.UiSurf.blit(self.carOnMap(),(0,0))
-            self.UiSurf.blit(self.carOnStreet(),(0,0))
-            if self.showUi:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self._run = False
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if self._rects[0].collidepoint(pygame.mouse.get_pos()):
-                            self.startControler()
-                        if self._rects[1].collidepoint(pygame.mouse.get_pos()):
-                            self._carInfoOffset = min(max(self._carInfoOffset+1,0),len(self._vehicles)-1)
-                        if self._rects[2].collidepoint(pygame.mouse.get_pos()):
-                            self._carInfoOffset = min(max(self._carInfoOffset-1,0),len(self._vehicles)-1)
-                    if event.type == pygame.MOUSEWHEEL:
-                        self._carInfoOffset = min(
-                            max(self._carInfoOffset + event.y, 0),
-                            len(self._vehicles)-1
-                        )
-                if(Ui.get_size() != self.UiSurf.get_size()):# type: ignore
-                    Ui = pygame.display.set_mode(self.UiSurf.get_size(),pygame.SCALED)
-                Ui.blit(self.UiSurf,(0,0))# type: ignore
-                Ui.blit(self._ControlButtonSurf,(0,0))# type: ignore
-                Ui.blit(self._ScrollSurf,(self._visMapSurf.get_width()-self._ScrollSurf.get_width(),0))# type: ignore
-                
-                pygame.display.update()
-            clock.tick(self.fps)
     
     def addVehicle(self, Vehicle:anki.Vehicle):
         self._vehicles.append(Vehicle)
