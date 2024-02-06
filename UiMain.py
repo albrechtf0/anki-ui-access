@@ -322,7 +322,11 @@ class Ui:
             color if color != None else (0,0,0),
             self._Design.EventFill
         )
+        #The lines between messages when using outlines apear due to using scroll 
+        # this is seen as a feature
         self._eventSurf.scroll(dy=event.get_height())
+        pygame.draw.rect(self._eventSurf,self._Design.EventFill,
+                         (0,0,self._eventSurf.get_width(),event.get_height()))
         self._eventSurf.blit(event, (10, 0))
     def getUiSurf(self) -> pygame.Surface: 
         self.updateUi()
