@@ -153,6 +153,7 @@ class Ui:
         for i in range(len(self._vehicles)):
             x, y, _ = self._lookup[self._vehicles[i].map_position] # type: ignore
             maping[x][y].append(i)
+        
         for x, column in enumerate(maping):
             for y, layers in enumerate(column):
                 if (layers != []):
@@ -222,12 +223,16 @@ class Ui:
                 self._Design.LineWidth
             )
         Button.blit(BtnText,(0,0))
+        
         UpArrow = self._font.render("\u25b2",True,self._Design.Text)
         DownArrow = self._font.render("\u25bc", True,self._Design.Text)
+        
         UpRect = UpArrow.get_rect()
         UpRect.topright = (self._visMapSurf.get_width(), 0)
+        
         DownRect = DownArrow.get_rect()
         DownRect.topright = (self._visMapSurf.get_width(), UpArrow.get_height())
+        
         ScrollSurf = pygame.surface.Surface(
             (UpArrow.get_width(),UpArrow.get_height()+DownArrow.get_height()),
             pygame.SRCALPHA
@@ -235,6 +240,7 @@ class Ui:
         ScrollSurf.fill(self._Design.ButtonFill)
         ScrollSurf.blit(UpArrow,(0,0))
         ScrollSurf.blit(DownArrow,(0,UpArrow.get_height()))
+        
         self._rects = (BtnRect,UpRect,DownRect)
         return (Button,ScrollSurf)
     
@@ -283,6 +289,7 @@ class Ui:
         clock = pygame.time.Clock()
         while(self._run and self.showUi):
             self.updateUi()
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self._run = False
@@ -298,6 +305,7 @@ class Ui:
                         max(self._carInfoOffset + event.y, 0),
                         len(self._vehicles)-1
                     )
+            
             if(Ui.get_size() != self.UiSurf.get_size()):# type: ignore
                 Ui = pygame.display.set_mode(self.UiSurf.get_size(),pygame.SCALED)
             Ui.blit(self.UiSurf,(0,0))# type: ignore
