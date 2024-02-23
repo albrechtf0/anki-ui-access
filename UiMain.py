@@ -135,6 +135,7 @@ class Ui:
             self._blitCarInfoOnSurface(surf, f"Lane: {fahrzeug.get_lane(self._laneSystem)}",(10,50))
             self._blitCarInfoOnSurface(surf, f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",(10,70))
             self._blitCarInfoOnSurface(surf, f"Offset: {round(fahrzeug.road_offset,2)}",(350,30))
+            self._blitCarInfoOnSurface(surf, f"Speed: {round(fahrzeug.speed,2)}", (350,50))
         except Exception as e:
             surf.fill(self._Design.CarInfoFill)
             self._blitCarInfoOnSurface(surf, f"Invalid information:\n{e}", (10,10))
