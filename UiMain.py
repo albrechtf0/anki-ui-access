@@ -170,43 +170,56 @@ class Ui:
         return surf
     def carOnStreet(self) -> pygame.Surface:
         rotationToDirection:dict[int,tuple[int,int]]= {
-            0: (1,-1),
-            90: (-1,-1),
-            180: (-1,1),
+            0: (1,0),
+            90: (0,0),
+            180: (0,1),
             270: (1,1)
         }
         
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
         for car in self._vehicles:
             x, y, i = self._lookup[car.map_position]
-            offset = (car.road_offset / 50)*15
-            orientation = self._visMap[x][y][i].orientation
-            #print(offset, orientation)
+            laneOffset = (car.road_offset / 60)*(20-5)
+            piece: Element = self._visMap[x][y][i]
+            orientation = piece.orientation
+
             if car.current_track_piece.type is not TrackPieceType.CURVE:
                 surf.blit(
                     rotateSurf(self._carIMG,orientation,-90),
-                    (x*100+40+offset*orientation[1],y*100+40+offset*orientation[0]))
+                    (x*100+40+laneOffset*-orientation[1],
+                     y*100+40+laneOffset*orientation[0]))
             else:
-                piece: Element = self._visMap[x][y][i]
-                print(piece.rotation)
+                laneOffset *= -1 if piece.piece.clockwise else 1
+                laneOffset += 50
+                direction = rotationToDirection[piece.rotation]
+                rotation = math.radians(piece.rotation)
+                curveOffset = (-math.cos(math.pi/4+rotation),math.sin(math.pi/4+rotation))
                 carImage = pygame.transform.rotate(
                     self._carIMG,
                     piece.rotation - 135 + (180 if piece.piece.clockwise else 0)
                 )
-                direction = rotationToDirection[piece.rotation]
                 surf.blit(
                     carImage,
                     (
-                        x*100 + 50-carImage.get_width()/2 + (offset + 25) * direction[0],
-                        y*100+50-carImage.get_height()/2 + (offset + 25) * direction[1]
+                        x*100 -carImage.get_width()/2  + 100* direction[0] + curveOffset[0]*laneOffset,
+                        y*100 -carImage.get_height()/2 + 100* direction[1] + curveOffset[1]*laneOffset
                     )
                 )
                 # TODO: Remove this when no longer required (added for testing purposes)
-                pygame.draw.circle(surf,(0,0,255),
-                                   (x*100+50 + (offset + 25) * rotationToDirection[piece.rotation][0],
-                                    y*100+50 + (offset + 25) * rotationToDirection[piece.rotation][1]),1)
+                # pygame.draw.circle(surf,(255,255,255),
+                #                 (x*100+50,
+                #                  y*100+50),1)
+                # pygame.draw.circle(surf,(0,255,255),
+                #                 (x*100 + 100* direction[0],
+                #                  y*100 + 100* direction[1]),50,1)
+                # pygame.draw.circle(surf,(255,0,0),
+                #                 (x*100 + 100* direction[0] + curveOffset[0]*50,
+                #                  y*100 + 100* direction[1] + curveOffset[1]*50),1)
+                # pygame.draw.circle(surf,(255,0,255),
+                #                 (x*100 + 100* direction[0] + curveOffset[0]*laneOffset,
+                #                  y*100 + 100* direction[1] + curveOffset[1]*laneOffset),2)
         return surf
-    
+
     def gen_Buttons(self):
         # NOTE: Pygame sucks. You can't render fonts with translucent background.
         # You _can_ render fonts with transparent background though, 
