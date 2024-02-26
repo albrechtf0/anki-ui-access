@@ -41,7 +41,7 @@ class Ui:
         
         #starting pygame
         pygame.init()
-        self._font = pygame.font.SysFont("Arial",20)
+        self._font = pygame.font.SysFont(Design.Font,Design.FontSize)
         # integrated event logging
         self._eventSurf: pygame.Surface|None = None
         #Ui surfaces
@@ -123,25 +123,26 @@ class Ui:
     def _blitCarInfoOnSurface(self, surf: pygame.Surface, text: str, dest: tuple[int, int]):
         surf.blit(
             self._font.render(text, True, self._Design.Text),
-            dest
+            (10+dest[0]*350,10+self._Design.FontSize*dest[1])
         )
     def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
-        surf = pygame.surface.Surface((500,100))
+        surf = pygame.surface.Surface((500,20+self._Design.FontSize*4))
         surf.fill(self._Design.CarInfoFill)
         try:
-            self._blitCarInfoOnSurface(surf, f"Vehicle ID: {fahrzeug.id}",(10,10))
-            self._blitCarInfoOnSurface(surf, f"Number: {number}",(400,10))
-            self._blitCarInfoOnSurface(surf, f"Position: {fahrzeug.map_position}",(10,30))
-            self._blitCarInfoOnSurface(surf, f"Lane: {fahrzeug.get_lane(self._laneSystem)}",(10,50))
-            self._blitCarInfoOnSurface(surf, f"Current Trackpiece: {fahrzeug.current_track_piece.type.name}",(10,70))
-            self._blitCarInfoOnSurface(surf, f"Offset: {round(fahrzeug.road_offset,2)}",(350,30))
-            self._blitCarInfoOnSurface(surf, f"Speed: {round(fahrzeug.speed,2)}", (350,50))
+            self._blitCarInfoOnSurface(surf, f"Vehicle ID: {fahrzeug.id}",(0,0))
+            self._blitCarInfoOnSurface(surf, f"Number: {number}",(1,0))
+            self._blitCarInfoOnSurface(surf, f"Position: {fahrzeug.map_position}",(0,1))
+            self._blitCarInfoOnSurface(surf, f"Offset: {round(fahrzeug.road_offset,2)}",(1,1))
+            self._blitCarInfoOnSurface(surf, f"Lane: {fahrzeug.get_lane(self._laneSystem)}",(0,2))
+            self._blitCarInfoOnSurface(surf, f"Speed: {round(fahrzeug.speed,2)}", (1,2))
+            self._blitCarInfoOnSurface(surf, f"Trackpiece: {fahrzeug.current_track_piece.type.name}",(0,3))
         except Exception as e:
             surf.fill(self._Design.CarInfoFill)
-            self._blitCarInfoOnSurface(surf, f"Invalid information:\n{e}", (10,10))
+            self._blitCarInfoOnSurface(surf, f"Invalid information:", (0,0))
+            self._blitCarInfoOnSurface(surf, f"{e}", (0,1))
             warnings.warn(e)
         if self._Design.ShowOutlines:
-            pygame.draw.rect(surf,self._Design.Line,(0,0,500,100),self._Design.LineWidth)
+            pygame.draw.rect(surf,self._Design.Line,surf.get_rect(),self._Design.LineWidth)
         return surf
     def carOnMap(self) ->pygame.Surface:
         maping = []
@@ -158,14 +159,17 @@ class Ui:
         for x, column in enumerate(maping):
             for y, layers in enumerate(column):
                 if (layers != []):
+                    width = 0
                     for i, current in enumerate(layers):
+                        text = self._font.render(
+                            f"{current}",
+                            True,
+                            self._Design.CarPosText
+                        )
+                        width += text.get_width()
                         surf.blit(
-                            self._font.render(
-                                f"{current}",
-                                True,
-                                self._Design.CarPosText
-                            ),
-                            (x*100+100-10*(i+1),y*100+80)
+                            text,
+                            (x*100+100-width,y*100+100-text.get_height())
                         )
                         #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
@@ -275,9 +279,10 @@ class Ui:
         carInfoSurfs = self.getCarSurfs()
         carInfoSurfs = carInfoSurfs[self._carInfoOffset:]
         for i, carInfoSurf in enumerate(carInfoSurfs):
-            self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_width(),100*i))
+            self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_width(),carInfoSurf.get_height()*i))
         self.UiSurf.blit(self.carOnMap(),(0,0))
-        self.UiSurf.blit(self.carOnStreet(),(0,0))
+        if(self._Design.ShowCarOnStreet):
+            self.UiSurf.blit(self.carOnStreet(),(0,0))
     
     #The Code that showeth the Ui (:D)
     def _UiThread(self):
