@@ -23,9 +23,14 @@ class Ui:
     def __init__(self, vehicles: list[anki.Vehicle], 
                  map,orientation :tuple[int,int],flipMap: bool =False,
                  showUi:bool = True,showControler:bool = False, fps: int = 60,
-                 customLanes:list[BaseLane]=[], Design = Design.Design()) -> None:
+                 customLanes:list[BaseLane]=[], 
+                 Design:Design.Design = Design.Design(),
+                 vehicleColors:list[tuple[int,int,int]]= []) -> None:
         #Loading vehicles and Lanes
         self._vehicles = vehicles
+        while(len(vehicles) > len(vehicleColors)):
+            vehicleColors.append((255,255,255))
+        self._vehicleColors = vehicleColors
         self._customLanes = customLanes + anki.Lane3.getAll() + anki.Lane4.getAll()
         self._laneSystem = BaseLane("CustomLanes",{lane.name:lane.value for lane in self._customLanes})
         #setting up map
@@ -123,7 +128,8 @@ class Ui:
     def _blitCarInfoOnSurface(self, surf: pygame.Surface, text: str, dest: tuple[int, int]):
         surf.blit(
             self._font.render(text, True, self._Design.Text),
-            (10+dest[0]*350,10+self._Design.FontSize*dest[1])
+            (10+dest[0]*300,
+            10+self._Design.FontSize*dest[1])
         )
     def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
         surf = pygame.surface.Surface((500,20+self._Design.FontSize*4))
@@ -136,6 +142,9 @@ class Ui:
             self._blitCarInfoOnSurface(surf, f"Lane: {fahrzeug.get_lane(self._laneSystem)}",(0,2))
             self._blitCarInfoOnSurface(surf, f"Speed: {round(fahrzeug.speed,2)}", (1,2))
             self._blitCarInfoOnSurface(surf, f"Trackpiece: {fahrzeug.current_track_piece.type.name}",(0,3))
+            pygame.draw.circle(surf,self._vehicleColors[number],
+                               (500-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
+                               self._Design.FontSize/2)
         except Exception as e:
             surf.fill(self._Design.CarInfoFill)
             self._blitCarInfoOnSurface(surf, f"Invalid information:", (0,0))
@@ -182,15 +191,17 @@ class Ui:
         }
         
         surf = pygame.surface.Surface(self._visMapSurf.get_size(),pygame.SRCALPHA)
-        for car in self._vehicles:
+        for carNum, car in enumerate(self._vehicles):
             x, y, i = self._lookup[car.map_position]
             laneOffset = (car.road_offset / 60)*(20-5)
             piece: Element = self._visMap[x][y][i]
             orientation = piece.orientation
 
+            carImage = self._carIMG.copy()
+            carImage.fill(self._vehicleColors[carNum],None,pygame.BLEND_RGB_MULT)
             if car.current_track_piece.type is not TrackPieceType.CURVE:
                 surf.blit(
-                    rotateSurf(self._carIMG,orientation,-90),
+                    rotateSurf(carImage,orientation,-90),
                     (x*100+40+laneOffset*-orientation[1],
                      y*100+40+laneOffset*orientation[0]))
             else:
@@ -200,7 +211,7 @@ class Ui:
                 rotation = math.radians(piece.rotation)
                 curveOffset = (-math.cos(math.pi/4+rotation),math.sin(math.pi/4+rotation))
                 carImage = pygame.transform.rotate(
-                    self._carIMG,
+                    carImage,
                     piece.rotation - 135 + (180 if piece.piece.clockwise else 0)
                 )
                 surf.blit(
@@ -385,8 +396,13 @@ class Ui:
         self._Design = Design
         self.updateDesign()
     
-    def addVehicle(self, Vehicle:anki.Vehicle):
+    def addVehicle(self, Vehicle:anki.Vehicle,VehicleColor:tuple[int,int,int]=(255,255,255)):
         self._vehicles.append(Vehicle)
+        self._vehicleColors.append(VehicleColor)
+    
+    def removeVehicle(self,index: int):
+        self._vehicles.pop(index)
+        self._vehicleColors.pop(index)
     
     def startControler(self): #modify starting condition
         if self._controlThread is None or not self._controlThread.is_alive():
