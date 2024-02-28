@@ -22,6 +22,10 @@ class vehicleControler:
             if(vehicleSelection[i].get() == 1):
                 asyncio.run_coroutine_threadsafe(self.vehicles[i].change_lane(ln,laneSpeed.get()),
                                                  self.eventLoop)
+    def alignVehicle(self, vehicleSelection:list[IntVar]):
+        for i in range(len(vehicleSelection)):
+            if(vehicleSelection[i].get() == 1):
+                asyncio.run_coroutine_threadsafe(self.vehicles[i].align(),self.eventLoop)
     
     def __init__(
         self,
@@ -44,7 +48,8 @@ class vehicleControler:
         btnFrm.grid(column=0,row=0)
         #ttk.Button(btnFrm, text="Exit",command=self.stop).grid(column=0, row=0)
         ttk.Button(btnFrm, text="Set Speed",command=lambda: self.startVehicle(speedValue,vSStates),).grid(column=0, row=0)
-        ttk.Button(btnFrm, text="Stop",command=lambda: self.stopVehicle(vSStates),).grid(column=0, row=1)
+        ttk.Button(btnFrm, text="Stop",command=lambda: self.stopVehicle(vSStates)).grid(column=0, row=1)
+        ttk.Button(btnFrm, text="Align",command=lambda: self.alignVehicle(vSStates)).grid(column=0, row=2)
         #speed selector
         spFrm = ttk.Frame(frm,padding=10,borderwidth=5,relief="groove")
         spFrm.grid(column=1,row=0,rowspan=2)

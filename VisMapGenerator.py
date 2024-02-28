@@ -184,6 +184,15 @@ def generate(
                 "Ignoring an intersection piece. If you have stacked two intersection pieces, this will cause bugs. If not, you can ignore this warning.",
                 stacklevel=2
             )
+            working_cell.append(Element(
+                piece,
+                orientation,
+                *orientation_to_rotation(
+                    piece.type,
+                    orientation,
+                    previous_orientation
+                )
+            ))
         previous_orientation = orientation
         pass
 
