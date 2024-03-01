@@ -1,5 +1,7 @@
+import itertools
 import os
 import math
+from typing import Iterable
 import warnings
 import threading
 import asyncio
@@ -136,17 +138,17 @@ class Ui:
             (10+dest[0]*300,
             10+self._Design.FontSize*dest[1])
         )
-    def carInfo(self, fahrzeug: anki.Vehicle, number:int) -> pygame.Surface:
+    def carInfo(self, vehicle: anki.Vehicle, number:int) -> pygame.Surface:
         surf = pygame.surface.Surface((500,20+self._Design.FontSize*4))
         surf.fill(self._Design.CarInfoFill)
         try:
-            self._blitCarInfoOnSurface(surf, f"Vehicle ID: {fahrzeug.id}",(0,0))
+            self._blitCarInfoOnSurface(surf, f"Vehicle ID: {vehicle.id}",(0,0))
             self._blitCarInfoOnSurface(surf, f"Number: {number}",(1,0))
-            self._blitCarInfoOnSurface(surf, f"Position: {fahrzeug.map_position}",(0,1))
-            self._blitCarInfoOnSurface(surf, f"Offset: {round(fahrzeug.road_offset,2)}",(1,1))
-            self._blitCarInfoOnSurface(surf, f"Lane: {fahrzeug.get_lane(self._laneSystem)}",(0,2))
-            self._blitCarInfoOnSurface(surf, f"Speed: {round(fahrzeug.speed,2)}", (1,2))
-            self._blitCarInfoOnSurface(surf, f"Trackpiece: {fahrzeug.current_track_piece.type.name}",(0,3))
+            self._blitCarInfoOnSurface(surf, f"Position: {vehicle.map_position}",(0,1))
+            self._blitCarInfoOnSurface(surf, f"Offset: {round(vehicle.road_offset,2)}",(1,1))
+            self._blitCarInfoOnSurface(surf, f"Lane: {vehicle.get_lane(self._laneSystem)}",(0,2))
+            self._blitCarInfoOnSurface(surf, f"Speed: {round(vehicle.speed,2)}", (1,2))
+            self._blitCarInfoOnSurface(surf, f"Trackpiece: {vehicle.current_track_piece.type.name}",(0,3))
             pygame.draw.circle(surf,self._accumulatedVehicleColors[number],
                                (500-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
                                self._Design.FontSize/2)
