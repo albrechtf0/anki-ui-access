@@ -296,7 +296,9 @@ class Ui:
         carInfoSurfs = carInfoSurfs[self._carInfoOffset:]
         for i, carInfoSurf in enumerate(carInfoSurfs):
             self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_width(),carInfoSurf.get_height()*i))
-        self.UiSurf.blit(self.carOnMap(),(0,0))
+        
+        if(self._Design.ShowCarNumOnMap):
+            self.UiSurf.blit(self.carOnMap(),(0,0))
         if(self._Design.ShowCarOnStreet):
             self.UiSurf.blit(self.carOnStreet(),(0,0))
     

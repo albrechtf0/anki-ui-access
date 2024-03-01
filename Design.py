@@ -13,6 +13,7 @@ class Design:
     ConsoleHeight:int = 200
     ShowGrid:bool = True
     ShowOutlines:bool = True
+    ShowCarNumOnMap: bool = True
     ShowCarOnStreet: bool = True
     Font: str = "Arial"
     FontSize: int = 20
