@@ -25,12 +25,17 @@ class Ui:
                  showUi:bool = True,showControler:bool = False, fps: int = 60,
                  customLanes:list[BaseLane]=[], 
                  Design:Design.Design = Design.Design(),
-                 vehicleColors:list[tuple[int,int,int]]= []) -> None:
+                 vehicleColors:Iterable[tuple[int,int,int]]= []) -> None:
+        self._vehicleColorIterator = itertools.chain(
+            iter(vehicleColors), 
+            itertools.repeat((255,255,255))
+        )
         #Loading vehicles and Lanes
         self._vehicles = vehicles
-        while(len(vehicles) > len(vehicleColors)):
-            vehicleColors.append((255,255,255))
-        self._vehicleColors = vehicleColors
+        self._accumulatedVehicleColors = [
+            next(self._vehicleColorIterator)
+            for _ in range(len(vehicles))
+        ]
         self._customLanes = customLanes + anki.Lane3.getAll() + anki.Lane4.getAll()
         self._laneSystem = BaseLane("CustomLanes",{lane.name:lane.value for lane in self._customLanes})
         #setting up map
@@ -142,7 +147,7 @@ class Ui:
             self._blitCarInfoOnSurface(surf, f"Lane: {fahrzeug.get_lane(self._laneSystem)}",(0,2))
             self._blitCarInfoOnSurface(surf, f"Speed: {round(fahrzeug.speed,2)}", (1,2))
             self._blitCarInfoOnSurface(surf, f"Trackpiece: {fahrzeug.current_track_piece.type.name}",(0,3))
-            pygame.draw.circle(surf,self._vehicleColors[number],
+            pygame.draw.circle(surf,self._accumulatedVehicleColors[number],
                                (500-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
                                self._Design.FontSize/2)
         except Exception as e:
@@ -198,7 +203,7 @@ class Ui:
             orientation = piece.orientation
 
             carImage = self._carIMG.copy()
-            carImage.fill(self._vehicleColors[carNum],None,pygame.BLEND_RGB_MULT)
+            carImage.fill(self._accumulatedVehicleColors[carNum],None,pygame.BLEND_RGB_MULT)
             if car.current_track_piece.type is not TrackPieceType.CURVE:
                 surf.blit(
                     rotateSurf(carImage,orientation,-90),
@@ -398,9 +403,16 @@ class Ui:
         self._Design = Design
         self.updateDesign()
     
-    def addVehicle(self, Vehicle:anki.Vehicle,VehicleColor:tuple[int,int,int]=(255,255,255)):
+    def addVehicle(
+            self,
+            Vehicle:anki.Vehicle,
+            VehicleColor: tuple[int,int,int]|None=None
+        ):
         self._vehicles.append(Vehicle)
-        self._vehicleColors.append(VehicleColor)
+        if VehicleColor is None:
+            self._accumulatedVehicleColors.append(next(self._vehicleColorIterator))
+        else:
+            self._accumulatedVehicleColors.append(VehicleColor)
     
     def removeVehicle(self,index: int):
         self._vehicles.pop(index)
