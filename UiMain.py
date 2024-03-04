@@ -424,7 +424,7 @@ class Ui:
     
     def removeVehicle(self,index: int):
         self._vehicles.pop(index)
-        self._vehicleColors.pop(index)
+        self._accumulatedVehicleColors.pop(index)
     
     def startControler(self): #modify starting condition
         if self._controlThread is None or not self._controlThread.is_alive():
