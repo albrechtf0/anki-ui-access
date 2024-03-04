@@ -24,12 +24,18 @@ except ImportError:
 CAR_INFO_WIDTH = 500
 
 class Ui:    
-    def __init__(self, vehicles: list[anki.Vehicle], 
-                 map,orientation :tuple[int,int],flipMap: bool =False,
-                 showUi:bool = True,showControler:bool = False, fps: int = 60,
-                 customLanes:list[BaseLane]=[], 
-                 Design:Design.Design = Design.Design(),
-                 vehicleColors:Iterable[tuple[int,int,int]]= []) -> None:
+    def __init__(self,
+            vehicles: list[anki.Vehicle], 
+            map,
+            orientation: tuple[int,int] = (1,0),
+            flipMap: bool = False,
+            showUi: bool = True,
+            showControler: bool = False,
+            fps: int = 60,
+            customLanes: list[BaseLane] = [], 
+            Design: Design.Design = Design.Design(),
+            vehicleColors: Iterable[tuple[int,int,int]] = []
+        ) -> None:
         self._vehicleColorIterator = itertools.chain(
             iter(vehicleColors), 
             itertools.repeat((255,255,255))
@@ -82,13 +88,11 @@ class Ui:
         self._carIMG = load_image(relative_to_file("Fahrzeug.png"))
     
     @classmethod
-    def fromController(
-        cls,
+    def fromController(cls,
         controller: anki.Controller,
-        orientation: tuple[int,int],
         **kwargs
     ):
-        return cls(list(controller.vehicles), controller.map, orientation, **kwargs)
+        return cls(list(controller.vehicles), controller.map, **kwargs)
     
     #generating vismap
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
