@@ -1,7 +1,7 @@
 import itertools
 import os
 import math
-from typing import Iterable
+from typing import Iterable, Self
 import warnings
 import threading
 import concurrent.futures
@@ -80,6 +80,15 @@ class Ui:
             self.startControler()
         
         self._carIMG = load_image(relative_to_file("Fahrzeug.png"))
+    
+    @classmethod
+    def fromController(
+        cls,
+        controller: anki.Controller,
+        orientation: tuple[int,int],
+        **kwargs
+    ):
+        return cls(list(controller.vehicles), controller.map, orientation, **kwargs)
     
     #generating vismap
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
