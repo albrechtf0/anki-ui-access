@@ -20,6 +20,7 @@ try:
 except ImportError:
     from VisMapGenerator import generate, flip_h, Vismap
 
+CAR_INFO_WIDTH = 500
 
 class Ui:    
     def __init__(self, vehicles: list[anki.Vehicle], 
@@ -139,7 +140,7 @@ class Ui:
             10+self._Design.FontSize*dest[1])
         )
     def carInfo(self, vehicle: anki.Vehicle, number:int) -> pygame.Surface:
-        surf = pygame.surface.Surface((500,20+self._Design.FontSize*4))
+        surf = pygame.surface.Surface((CAR_INFO_WIDTH,20+self._Design.FontSize*4))
         surf.fill(self._Design.CarInfoFill)
         try:
             self._blitCarInfoOnSurface(surf, f"Vehicle ID: {vehicle.id}",(0,0))
@@ -150,7 +151,7 @@ class Ui:
             self._blitCarInfoOnSurface(surf, f"Speed: {round(vehicle.speed,2)}", (1,2))
             self._blitCarInfoOnSurface(surf, f"Trackpiece: {vehicle.current_track_piece.type.name}",(0,3))
             pygame.draw.circle(surf,self._accumulatedVehicleColors[number],
-                               (500-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
+                               (CAR_INFO_WIDTH-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
                                self._Design.FontSize/2)
         except Exception as e:
             surf.fill(self._Design.CarInfoFill)
@@ -314,7 +315,7 @@ class Ui:
         self._eventSurf.fill(self._Design.EventFill)
         self.addEvent("Started Ui",self._Design.Text)
         uiSize = (
-            self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
+            self._visMapSurf.get_width() + CAR_INFO_WIDTH,
             self._visMapSurf.get_height() + self._Design.ConsoleHeight
         )
         if self.showUi:
