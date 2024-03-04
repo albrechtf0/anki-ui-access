@@ -4,6 +4,7 @@ import math
 from typing import Iterable
 import warnings
 import threading
+import concurrent.futures
 import asyncio
 import pygame 
 
@@ -69,6 +70,9 @@ class Ui:
         self._thread = threading.Thread(target=self._UiThread,daemon=True)
         self._run = True
         self._thread.start()
+        # concurrent.futures doesn not see the potential of manually created futures
+        # too bad!
+        self._uiSetupComplete = concurrent.futures.Future()
         #getting eventloop and starting ControlWindow
         self._eventLoop = asyncio.get_running_loop()
         self._controlThread = None
@@ -326,6 +330,7 @@ class Ui:
             Ui = pygame.display.set_mode(uiSize, pygame.SCALED)
         self.UiSurf = pygame.surface.Surface(uiSize)
         
+        self._uiSetupComplete.set_result(True)
         clock = pygame.time.Clock()
         while(self._run and self.showUi):
             self.updateUi()
@@ -436,6 +441,13 @@ class Ui:
     
     async def waitForFinishAsync(self, timeout: float|None=None) -> bool:
         return await asyncio.get_running_loop().run_in_executor(None,self.waitForFinish,timeout)
+    
+    def waitForSetup(self, timeout: float|None=None) -> bool:
+        return self._uiSetupComplete.result(timeout)
+    
+    async def waitForSetupAsync(self) -> bool:
+        return await asyncio.wrap_future(self._uiSetupComplete)
+    
     
     def __enter__(self):
         return self
