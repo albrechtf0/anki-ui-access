@@ -14,17 +14,16 @@ Orientation = tuple[Literal[-1,0,1],Literal[-1,0,1]]
 class Element:
     piece: TrackPiece
     orientation: Orientation
-    rotation: int|None = None
-    flipped: bool|None = None
+    rotation: int
 
     def __repr__(self):
-        return f"{type(self).__qualname__}({self.piece.type.name},{self.orientation}[{self.rotation},{self.flipped}])"
+        return f"{type(self).__qualname__}({self.piece.type.name},{self.orientation}[{self.rotation}])"
         pass
     def __str__(self):
         return repr(self)
     pass
 
-_ORIENTATIONS: tuple[Orientation,...]=((1,0),(0,-1),(-1,0),(0,1))
+_ORIENTATIONS: tuple[Orientation,...] = ((1,0),(0,-1),(-1,0),(0,1))
 def _next_orientation(orientation: Orientation, is_clockwise: bool) -> Orientation:
     new_index = _ORIENTATIONS.index(orientation) + (1 if not is_clockwise else -1)
     return _ORIENTATIONS[new_index%len(_ORIENTATIONS)]
@@ -85,12 +84,11 @@ piece orientation. The previous piece orientation has to be inverted.
 """
 
 def orientation_to_rotation(
-    type,
+    type: TrackPieceType,
     orientation: Orientation, 
     previous_orientation: Orientation
-) -> tuple[int,bool]:
+) -> int:
     if type == TrackPieceType.CURVE:
-        flipped = False
         try:
             rotation = _CURVE_ROTATIONS_LOOKUP[
                 (orientation,_invert_orientation(previous_orientation))
@@ -101,17 +99,16 @@ def orientation_to_rotation(
             rotation = _CURVE_ROTATIONS_LOOKUP[
                 (_invert_orientation(previous_orientation),orientation)
             ]
-            flipped = False
-        return rotation, flipped
+        return rotation
         pass
     elif type in (
         TrackPieceType.STRAIGHT,
         TrackPieceType.START,
         TrackPieceType.FINISH
     ):
-        return _ORIENTATIONS.index(orientation)*90, False
+        return _ORIENTATIONS.index(orientation)*90
     elif type == TrackPieceType.INTERSECTION:
-        return 0, False
+        return 0
     else:
         raise RuntimeError
     pass
@@ -172,7 +169,7 @@ def generate(
             working_cell.append(Element(
                 piece,
                 orientation,
-                *orientation_to_rotation(
+                orientation_to_rotation(
                     piece.type,
                     orientation,
                     previous_orientation
@@ -187,7 +184,7 @@ def generate(
             working_cell.append(Element(
                 piece,
                 orientation,
-                *orientation_to_rotation(
+                orientation_to_rotation(
                     piece.type,
                     orientation,
                     previous_orientation
@@ -199,7 +196,8 @@ def generate(
     return vismap, position_tracker
     pass
 
-def h_rotation_flip(r: int) -> int: return 90-(r%180) + (r//180)*180
+def h_rotation_flip(r: int) -> int: 
+    return 90 - (r%180) + (r//180)*180
 
 def flip_h(
     vismap: Vismap, 
@@ -211,7 +209,7 @@ def flip_h(
                 Element(
                     e.piece,
                     (-e.orientation[0],e.orientation[1]),
-                    h_rotation_flip(e.rotation) # type: ignore
+                    h_rotation_flip(e.rotation)
                 )
                 for e in position
             ]
