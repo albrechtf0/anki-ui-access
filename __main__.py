@@ -20,6 +20,7 @@ async def main():
         await control.scan() # type: ignore
         with Ui(list(autos),control.map,(1,0),False,fps=10,
                 vehicleColors=[(255,0,0)]) as Uiob:
+            await Uiob.waitForSetupAsync() # Ensure addEvent is called only after successful setup.
             Uiob.addEvent("test")
             while True:
                 await asyncio.sleep(10)

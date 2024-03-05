@@ -1,9 +1,10 @@
 import itertools
 import os
 import math
-from typing import Iterable
+from typing import Iterable, Self
 import warnings
 import threading
+import concurrent.futures
 import asyncio
 import pygame 
 
@@ -11,7 +12,7 @@ import anki
 from anki import TrackPieceType
 from anki.misc.lanes import BaseLane
 
-import Design
+from Design import Design
 from VehicleControlWindow import vehicleControler
 from helpers import *
 
@@ -20,14 +21,21 @@ try:
 except ImportError:
     from VisMapGenerator import generate, flip_h, Vismap
 
+CAR_INFO_WIDTH = 500
 
 class Ui:    
-    def __init__(self, vehicles: list[anki.Vehicle], 
-                 map,orientation :tuple[int,int],flipMap: bool =False,
-                 showUi:bool = True,showControler:bool = False, fps: int = 60,
-                 customLanes:list[BaseLane]=[], 
-                 Design:Design.Design = Design.Design(),
-                 vehicleColors:Iterable[tuple[int,int,int]]= []) -> None:
+    def __init__(self,
+            vehicles: list[anki.Vehicle], 
+            map,
+            orientation: tuple[int,int] = (1,0),
+            flipMap: bool = False,
+            showUi: bool = True,
+            showControler: bool = False,
+            fps: int = 60,
+            customLanes: list[BaseLane] = [], 
+            design: Design = Design(),
+            vehicleColors: Iterable[tuple[int,int,int]] = []
+        ) -> None:
         self._vehicleColorIterator = itertools.chain(
             iter(vehicleColors), 
             itertools.repeat((255,255,255))
@@ -49,11 +57,11 @@ class Ui:
         self.showUi = showUi
         self.fps = fps
         self._carInfoOffset = 0
-        self._Design = Design
+        self._design = design
         
         #starting pygame
         pygame.init()
-        self._font = pygame.font.SysFont(Design.Font,Design.FontSize)
+        self._font = pygame.font.SysFont(design.Font, design.FontSize)
         # integrated event logging
         self._eventSurf: pygame.Surface|None = None
         #Ui surfaces
@@ -68,6 +76,9 @@ class Ui:
         self._thread = threading.Thread(target=self._UiThread,daemon=True)
         self._run = True
         self._thread.start()
+        # concurrent.futures doesn not see the potential of manually created futures
+        # too bad!
+        self._uiSetupComplete = concurrent.futures.Future()
         #getting eventloop and starting ControlWindow
         self._eventLoop = asyncio.get_running_loop()
         self._controlThread = None
@@ -76,14 +87,21 @@ class Ui:
         
         self._carIMG = load_image(relative_to_file("Fahrzeug.png"))
     
+    @classmethod
+    def fromController(cls,
+        controller: anki.Controller,
+        **kwargs
+    ):
+        return cls(list(controller.vehicles), controller.map, **kwargs)
+    
     #generating vismap
     def genGrid(self,visMap,mapsurf)-> pygame.Surface:
         drawGridLine = lambda start, end: pygame.draw.line(
             mapsurf,
-            self._Design.Line,
+            self._design.Line,
             start,
             end,
-            self._Design.LineWidth
+            self._design.LineWidth
         )
         for x in range(1,len(visMap)):
             drawGridLine((x*100,0), (x*100,len(visMap[x])*100))
@@ -126,21 +144,21 @@ class Ui:
                         case TrackPieceType.FINISH:
                             pass
         self._visMapSurf = mapSurf
-        if self._Design.ShowGrid:
+        if self._design.ShowGrid:
             self._visMapSurf = self.genGrid(visMap,mapSurf)
-        if self._Design.ShowOutlines:
-            pygame.draw.rect(self._visMapSurf,self._Design.Line,(0,0,len(visMap)*100, len(visMap[0])*100),self._Design.LineWidth)
+        if self._design.ShowOutlines:
+            pygame.draw.rect(self._visMapSurf,self._design.Line,(0,0,len(visMap)*100, len(visMap[0])*100),self._design.LineWidth)
     
     #infos for cars
     def _blitCarInfoOnSurface(self, surf: pygame.Surface, text: str, dest: tuple[int, int]):
         surf.blit(
-            self._font.render(text, True, self._Design.Text),
+            self._font.render(text, True, self._design.Text),
             (10+dest[0]*300,
-            10+self._Design.FontSize*dest[1])
+            10+self._design.FontSize*dest[1])
         )
     def carInfo(self, vehicle: anki.Vehicle, number:int) -> pygame.Surface:
-        surf = pygame.surface.Surface((500,20+self._Design.FontSize*4))
-        surf.fill(self._Design.CarInfoFill)
+        surf = pygame.surface.Surface((CAR_INFO_WIDTH,20+self._design.FontSize*4))
+        surf.fill(self._design.CarInfoFill)
         try:
             self._blitCarInfoOnSurface(surf, f"Vehicle ID: {vehicle.id}",(0,0))
             self._blitCarInfoOnSurface(surf, f"Number: {number}",(1,0))
@@ -150,15 +168,15 @@ class Ui:
             self._blitCarInfoOnSurface(surf, f"Speed: {round(vehicle.speed,2)}", (1,2))
             self._blitCarInfoOnSurface(surf, f"Trackpiece: {vehicle.current_track_piece.type.name}",(0,3))
             pygame.draw.circle(surf,self._accumulatedVehicleColors[number],
-                               (500-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
-                               self._Design.FontSize/2)
+                               (CAR_INFO_WIDTH-10-self._design.FontSize/2,10+self._design.FontSize*3.5),
+                               self._design.FontSize/2)
         except Exception as e:
-            surf.fill(self._Design.CarInfoFill)
+            surf.fill(self._design.CarInfoFill)
             self._blitCarInfoOnSurface(surf, f"Invalid information:", (0,0))
             self._blitCarInfoOnSurface(surf, f"{e}", (0,1))
             warnings.warn(e)
-        if self._Design.ShowOutlines:
-            pygame.draw.rect(surf,self._Design.Line,surf.get_rect(),self._Design.LineWidth)
+        if self._design.ShowOutlines:
+            pygame.draw.rect(surf,self._design.Line,surf.get_rect(),self._design.LineWidth)
         return surf
     def carOnMap(self) ->pygame.Surface:
         maping = []
@@ -180,7 +198,7 @@ class Ui:
                         text = self._font.render(
                             f"{current}",
                             True,
-                            self._Design.CarPosText
+                            self._design.CarPosText
                         )
                         width += text.get_width()
                         surf.blit(
@@ -247,21 +265,21 @@ class Ui:
         # NOTE: Pygame sucks. You can't render fonts with translucent background.
         # You _can_ render fonts with transparent background though, 
         # so this blitting nonsense works while a background colour doesn't.
-        BtnText = self._font.render("Controller",True,self._Design.Text)
+        BtnText = self._font.render("Controller",True,self._design.Text)
         Button = pygame.surface.Surface(BtnText.get_size(),pygame.SRCALPHA)
-        Button.fill(self._Design.ButtonFill)
+        Button.fill(self._design.ButtonFill)
         BtnRect = BtnText.get_rect()
-        if self._Design.ShowOutlines:
+        if self._design.ShowOutlines:
             pygame.draw.rect(
                 Button,
-                self._Design.Line,
+                self._design.Line,
                 BtnRect,
-                self._Design.LineWidth
+                self._design.LineWidth
             )
         Button.blit(BtnText,(0,0))
         
-        UpArrow = self._font.render("\u25b2",True,self._Design.Text)
-        DownArrow = self._font.render("\u25bc", True,self._Design.Text)
+        UpArrow = self._font.render("\u25b2",True,self._design.Text)
+        DownArrow = self._font.render("\u25bc", True,self._design.Text)
         
         UpRect = UpArrow.get_rect()
         UpRect.topright = (self._visMapSurf.get_width(), 0)
@@ -273,7 +291,7 @@ class Ui:
             (UpArrow.get_width(),UpArrow.get_height()+DownArrow.get_height()),
             pygame.SRCALPHA
         )
-        ScrollSurf.fill(self._Design.ButtonFill)
+        ScrollSurf.fill(self._design.ButtonFill)
         ScrollSurf.blit(UpArrow,(0,0))
         ScrollSurf.blit(DownArrow,(0,UpArrow.get_height()))
         
@@ -282,16 +300,16 @@ class Ui:
     
     
     def updateUi(self):
-        self.UiSurf.fill(self._Design.Background)
+        self.UiSurf.fill(self._design.Background)
         self.UiSurf.blit(self._visMapSurf,(0,0))
         
         self.UiSurf.blit(self._eventSurf,(0,self._visMapSurf.get_height()))
-        if self._Design.ShowOutlines:
+        if self._design.ShowOutlines:
             pygame.draw.rect(
                 self._eventSurf,
-                self._Design.Line,
+                self._design.Line,
                 self._eventSurf.get_rect(),
-                self._Design.LineWidth
+                self._design.LineWidth
             )
         
         carInfoSurfs = self.getCarSurfs()
@@ -299,9 +317,9 @@ class Ui:
         for i, carInfoSurf in enumerate(carInfoSurfs):
             self.UiSurf.blit(carInfoSurf,(self._visMapSurf.get_width(),carInfoSurf.get_height()*i))
         
-        if(self._Design.ShowCarNumOnMap):
+        if(self._design.ShowCarNumOnMap):
             self.UiSurf.blit(self.carOnMap(),(0,0))
-        if(self._Design.ShowCarOnStreet):
+        if(self._design.ShowCarOnStreet):
             self.UiSurf.blit(self.carOnStreet(),(0,0))
     
     #The Code that showeth the Ui (:D)
@@ -309,13 +327,13 @@ class Ui:
         self.gen_MapSurface(self._visMap)
         self._eventSurf = pygame.Surface((
             self._visMapSurf.get_width(),
-            self._Design.ConsoleHeight
+            self._design.ConsoleHeight
         ))
-        self._eventSurf.fill(self._Design.EventFill)
-        self.addEvent("Started Ui",self._Design.Text)
+        self._eventSurf.fill(self._design.EventFill)
+        self.addEvent("Started Ui",self._design.Text)
         uiSize = (
-            self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-            self._visMapSurf.get_height() + self._Design.ConsoleHeight
+            self._visMapSurf.get_width() + CAR_INFO_WIDTH,
+            self._visMapSurf.get_height() + self._design.ConsoleHeight
         )
         if self.showUi:
             Logo = load_image("Logo.png")
@@ -325,6 +343,7 @@ class Ui:
             Ui = pygame.display.set_mode(uiSize, pygame.SCALED)
         self.UiSurf = pygame.surface.Surface(uiSize)
         
+        self._uiSetupComplete.set_result(True)
         clock = pygame.time.Clock()
         while(self._run and self.showUi):
             self.updateUi()
@@ -367,12 +386,12 @@ class Ui:
             text,
             True,
             color if color != None else (0,0,0),
-            self._Design.EventFill
+            self._design.EventFill
         )
         #The lines between messages when using outlines apear due to using scroll 
         # this is seen as a feature
         self._eventSurf.scroll(dy=event.get_height())
-        pygame.draw.rect(self._eventSurf,self._Design.EventFill,
+        pygame.draw.rect(self._eventSurf,self._design.EventFill,
                          (0,0,self._eventSurf.get_width(),event.get_height()))
         self._eventSurf.blit(event, (10, 0))
     def getUiSurf(self) -> pygame.Surface: 
@@ -390,7 +409,7 @@ class Ui:
         self.gen_MapSurface(self._visMap)
         self.UiSurf = pygame.surface.Surface(
             (self._visMapSurf.get_width() + self.getCarSurfs()[0].get_width(),
-                self._visMapSurf.get_height() + self._Design.ConsoleHeight))
+                self._visMapSurf.get_height() + self._design.ConsoleHeight))
         if(self.showUi):
             self._ControlButtonSurf, self._ScrollSurf = self.gen_Buttons()
         
@@ -398,11 +417,11 @@ class Ui:
         # TODO: Fix code duplication with _UiThread
         self._eventSurf = pygame.Surface((
             self._visMapSurf.get_width(),
-            self._Design.ConsoleHeight
+            self._design.ConsoleHeight
         ))
         self._eventSurf.blit(old_eventSurf, (0, 0))
-    def setDesign(self,Design: Design.Design):
-        self._Design = Design
+    def setDesign(self, design: Design):
+        self._design = design
         self.updateDesign()
     
     def addVehicle(
@@ -418,7 +437,7 @@ class Ui:
     
     def removeVehicle(self,index: int):
         self._vehicles.pop(index)
-        self._vehicleColors.pop(index)
+        self._accumulatedVehicleColors.pop(index)
     
     def startControler(self): #modify starting condition
         if self._controlThread is None or not self._controlThread.is_alive():
@@ -435,6 +454,13 @@ class Ui:
     
     async def waitForFinishAsync(self, timeout: float|None=None) -> bool:
         return await asyncio.get_running_loop().run_in_executor(None,self.waitForFinish,timeout)
+    
+    def waitForSetup(self, timeout: float|None=None) -> bool:
+        return self._uiSetupComplete.result(timeout)
+    
+    async def waitForSetupAsync(self) -> bool:
+        return await asyncio.wrap_future(self._uiSetupComplete)
+    
     
     def __enter__(self):
         return self
