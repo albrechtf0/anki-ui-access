@@ -28,7 +28,7 @@ class Ui:
             vehicles: list[anki.Vehicle], 
             map,
             orientation: tuple[int,int] = (1,0),
-            flipMap: bool = False,
+            flip: tuple[bool, bool] = (False, False),
             showUi: bool = True,
             showControler: bool = False,
             fps: int = 60,
@@ -49,11 +49,20 @@ class Ui:
         self._customLanes = customLanes + anki.Lane3.getAll() + anki.Lane4.getAll()
         self._laneSystem = BaseLane("CustomLanes",{lane.name:lane.value for lane in self._customLanes})
         #setting up map
+        flip_horizontal = flip[0]
+        if flip[1]:
+            # Vertical flipping is 180° rotation with horizontal flipping
+            flip_horizontal = not flip_horizontal
+            orientation = (-orientation[0], -orientation[1])
+
         self._map = map
         self._visMap, self._lookup = generate(self._map, orientation)
-        if flipMap:
-            self._visMap, self._lookup = flip_h(self._visMap,self._lookup)
-            #loading aditional information
+        
+        if flip_horizontal:
+            self._visMap, self._lookup = flip_h(self._visMap, self._lookup)
+
+        
+        #loading aditional information
         self.showUi = showUi
         self.fps = fps
         self._carInfoOffset = 0
