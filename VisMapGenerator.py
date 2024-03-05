@@ -196,8 +196,14 @@ def generate(
     return vismap, position_tracker
     pass
 
+ROTATION_FLIP_MAP = {
+    0: 90,
+    90: 0,
+    180: 270,
+    270: 180
+}
 def h_rotation_flip(r: int) -> int: 
-    return 90 - (r%180) + (r//180)*180
+    return ROTATION_FLIP_MAP[r]
 
 def flip_h(
     vismap: Vismap, 
@@ -213,9 +219,9 @@ def flip_h(
                 )
                 for e in position
             ]
-            for position in reversed(column)
+            for position in column
         ] 
-        for column in vismap
+        for column in reversed(vismap)
     ]
     
     column_count = len(vismap)
