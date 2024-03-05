@@ -31,7 +31,7 @@ class Ui:
             flip: tuple[bool, bool] = (False, False),
             showUi: bool = True,
             showControler: bool = False,
-            fps: int = 60,
+            fps: int = 10,
             customLanes: list[BaseLane] = [], 
             design: Design = Design(),
             vehicleColors: Iterable[tuple[int,int,int]] = []
