@@ -1,7 +1,6 @@
 import itertools
-import os
 import math
-from typing import Iterable, Self
+from typing import Iterable
 import warnings
 import threading
 import concurrent.futures
@@ -123,35 +122,34 @@ class Ui:
         Kreuzung = load_image("Kreuzung.png")
         Start = load_image("Start.png")
         mapSurf = pygame.surface.Surface((len(visMap)*100, len(visMap[0])*100),pygame.SRCALPHA)
-        for x, column in enumerate(visMap):
-            for y, layers in enumerate(column):
-                for i, current in enumerate(layers):
-                    match current.piece.type:
-                        case TrackPieceType.STRAIGHT:
-                            Gerade.set_alpha(int((1.5**-i)*255))
-                            mapSurf.blit(
-                                rotateSurf(Gerade,current.orientation,90),
-                                (x*100,y*100)
-                            )
-                            # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
-                        case TrackPieceType.CURVE:
-                            Kurve.set_alpha(int((1.5**-i)*255))
-                            mapSurf.blit(pygame.transform.rotate(Kurve,float(current.rotation)),(x*100,y*100)) # type: ignore
-                            #mapSurf.blit(self._font.render(
-                            #    f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
-                            #    True,
-                            #    (100,100,100)
-                            #),(x*100,y*100))
-                        case TrackPieceType.INTERSECTION:
-                            if current.orientation[0] != 0:
-                                Kreuzung.set_alpha(int((1.5**-i)*255))
-                                mapSurf.blit(Kreuzung, (x*100,y*100))
-                        case TrackPieceType.START:
-                            Start.set_alpha(int((1.5**-i)*255))
-                            mapSurf.blit(rotateSurf(Start,current.orientation,90),(x*100,y*100))
-                            # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
-                        case TrackPieceType.FINISH:
-                            pass
+        for (i, y, x), current in enumerated_flatten(visMap):
+            current: Element
+            match current.piece.type:
+                case TrackPieceType.STRAIGHT:
+                    Gerade.set_alpha(int((1.5**-i)*255))
+                    mapSurf.blit(
+                        rotateSurf(Gerade,current.orientation,90),
+                        (x*100,y*100)
+                    )
+                    # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
+                case TrackPieceType.CURVE:
+                    Kurve.set_alpha(int((1.5**-i)*255))
+                    mapSurf.blit(pygame.transform.rotate(Kurve,float(current.rotation)),(x*100,y*100)) # type: ignore
+                    #mapSurf.blit(self._font.render(
+                    #    f"{current.rotation} {current.orientation} {int(current.flipped) if current.flipped is not None else '/'}",
+                    #    True,
+                    #    (100,100,100)
+                    #),(x*100,y*100))
+                case TrackPieceType.INTERSECTION:
+                    if current.orientation[0] != 0:
+                        Kreuzung.set_alpha(int((1.5**-i)*255))
+                        mapSurf.blit(Kreuzung, (x*100,y*100))
+                case TrackPieceType.START:
+                    Start.set_alpha(int((1.5**-i)*255))
+                    mapSurf.blit(rotateSurf(Start,current.orientation,90),(x*100,y*100))
+                    # mapSurf.blit(self._font.render(f"{current.orientation}",True,(100,100,100)),(x*100,y*100))
+                case TrackPieceType.FINISH:
+                    pass
         self._visMapSurf = mapSurf
         if self._design.ShowGrid:
             self._visMapSurf = self.genGrid(visMap,mapSurf)
@@ -201,20 +199,19 @@ class Ui:
         
         for x, column in enumerate(maping):
             for y, layers in enumerate(column):
-                if (layers != []):
-                    width = 0
-                    for i, current in enumerate(layers):
-                        text = self._font.render(
-                            f"{current}",
-                            True,
-                            self._design.CarPosText
-                        )
-                        width += text.get_width()
-                        surf.blit(
-                            text,
-                            (x*100+100-width,y*100+100-text.get_height())
-                        )
-                        #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
+                width = 0
+                for i, current in enumerate(layers):
+                    text = self._font.render(
+                        f"{current}",
+                        True,
+                        self._design.CarPosText
+                    )
+                    width += text.get_width()
+                    surf.blit(
+                        text,
+                        (x*100+100-width,y*100+100-text.get_height())
+                    )
+                    #pygame.draw.rect(surf,(0,0,0),(x*100+100-10*(i+1),y*100+90,10,10),1)
         return surf
     def carOnStreet(self) -> pygame.Surface:
         rotationToDirection:dict[int,tuple[int,int]]= {
