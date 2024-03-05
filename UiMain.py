@@ -152,7 +152,7 @@ class Ui:
             pygame.draw.circle(surf,self._accumulatedVehicleColors[number],
                                (500-10-self._Design.FontSize/2,10+self._Design.FontSize*3.5),
                                self._Design.FontSize/2)
-        except Exception as e:
+        except (AttributeError, TypeError) as e:
             surf.fill(self._Design.CarInfoFill)
             self._blitCarInfoOnSurface(surf, f"Invalid information:", (0,0))
             self._blitCarInfoOnSurface(surf, f"{e}", (0,1))
